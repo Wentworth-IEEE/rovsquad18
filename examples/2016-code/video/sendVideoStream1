@@ -1,2 +1,2 @@
 #!/bin/bash
-/home/pi/WIT_ROV/vplay -o -f -c -1 -d /dev/video0 | nc 10.10.10.5 5000
+./bin/vplay -o -f -c -1 -d /dev/video0 | nc 10.10.10.5 5000
