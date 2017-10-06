@@ -1,0 +1,14 @@
+{
+  "name": "surface",
+  "version": "1.0.0",
+  "description": "WIT IEEE Underwater ROV 2018 prototype surface station",
+  "main": "surface.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Bobby Martin",
+  "license": "ISC",
+  "dependencies": {
+    "serialport": "^5.0.0"
+  }
+}
