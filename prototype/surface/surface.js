@@ -1,17 +1,9 @@
 // Bobby Martin
 // 2017
 
-const fs = require('fs');
 const SerialPort = require('serialport');
 
 const baudRate = 696969; // TODO: Chris what the heck baud rate did you use I forget
-
-let test;
-fs.readFile('test.json', 'utf8', (err, data) => {
-    if (err) throw err;
-    test = JSON.parse(data);
-    console.log(test);
-});
 
 // this works in theory but has not been tested
 // TODO: maybe rework this with callbacks??
