@@ -53,27 +53,27 @@ void loop() {
       !(joy_P < joy_P_last+.02 && joy_P > joy_P_last-.02) ||
       !(joy_U < joy_U_last+.02 && joy_U > joy_U_last-.02) ||
       !(joy_R < joy_R_last+.02 && joy_R > joy_R_last-.02) ) {
-  
-  
+
+
     Serial.print("{\"joysticks\":[");
-    
-    Serial.print(joy_F);
-  
+
+    Serial.print(joy_F, 6);
+
     Serial.print(",");
-    Serial.print(joy_S);
-  
+    Serial.print(joy_S, 6);
+
     Serial.print(",");
-    Serial.print(joy_P);
-    
+    Serial.print(joy_P, 6);
+
     Serial.print(",");
-    Serial.print(joy_Y);
-    
+    Serial.print(joy_Y, 6);
+
     Serial.print(",");
-    Serial.print(joy_R);
-    
+    Serial.print(joy_R, 6);
+
     Serial.print(",");
-    Serial.print(joy_U);
-    
+    Serial.print(joy_U, 6);
+
     Serial.print("],\"buttons\":[0]}");
     Serial.print("\n");
 
@@ -83,11 +83,10 @@ void loop() {
     joy_P_last = joy_P;
     joy_U_last = joy_U;
     joy_R_last = joy_R;
-    
-    
+
+
    }
 
    //delay(2);
-      
-}
 
+}
