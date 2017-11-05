@@ -1,32 +1,18 @@
 // Bobby Martin
 // 2017
 
-const SerialPort = require('serialport');
-const Readline = SerialPort.parsers.Readline;
+const Controller = require('./lib/controller');
 
-// TODO: turn this into a module once we know it works
+async function main() {
 
-const baudRate = 19200;
+    const controller = new Controller();
+    await controller.init();
 
-// this works in theory but has not been tested
-SerialPort.list().then((ports) => {
-    // look through each COM port returned by SerialPort.list()
-    for (let i = 0; i < ports.length; i++) {
-        // if the port's manufacturer contains "Arduino"
-        if (ports[i].manufacturer.indexOf('Arduino') !== -1)
-        // return a new SerialPort object opened on that port
-            return new SerialPort(ports[i].comName, {
-                baudRate: baudRate
-            });
-    }
-    // throw an error if we don't find the arduino
-    throw 'Arduino not found';
-}).then((port) => {
-    const parser = port.pipe(new Readline());
-    port.on('open', () => {
-        console.log('HEYYY');
-    });
-    parser.on('data', (data) => {
-        console.log(data);
-    });
+    controller.on('open', () => console.log('connection with controller opened'));
+    controller.on('data', data => console.log(data));
+
+}
+
+main().catch(error => {
+    console.error(error);
 });
