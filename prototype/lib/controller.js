@@ -1,15 +1,16 @@
 // Bobby Martin
 // 2017
 
-// native dependancies
+// native dependencies
 const EventEmitter = require('events');
 
-// package dependancies
+// package dependencies
 const SerialPort = require('serialport');
 const Readline = SerialPort.parsers.Readline;
 
 const baudRate = 19200;
 
+// yay!
 class controller extends EventEmitter {
 
     constructor() {
@@ -38,7 +39,7 @@ class controller extends EventEmitter {
         // this gathers our data into nice lines
         this.parser = this.port.pipe(new Readline());
         // listeners
-        this.parser.on('data', (data) => {
+        this.parser.on('data', data => {
             this.emit('data', data);
         });
         this.port.on('open', () => {
