@@ -10,17 +10,20 @@ const port = 8080;
 
 async function main() {
 
-    const controller = new Controller();
-    await controller.init();
-
-    controller.on('open', () => console.log('connection with controller opened'));
-    controller.on('data', data => console.log(data));
+    // this is commented out for now so we can focus on bot connection stuff
+    // const controller = new Controller();
+    // await controller.init();
+    //
+    // controller.on('open', () => console.log('connection with controller opened'));
+    // controller.on('data', data => console.log(data));
 
     const socket = new BotSocket();
     socket.connect({
         host: host,
         port: port
     });
+    socket.echo('greetings');
+    socket.on('data', data => console.log(data));
 
 }
 

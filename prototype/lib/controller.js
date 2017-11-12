@@ -8,6 +8,7 @@ const EventEmitter = require('events');
 const SerialPort = require('serialport');
 const Readline = SerialPort.parsers.Readline;
 
+// global constants
 const baudRate = 19200;
 
 // yay!
