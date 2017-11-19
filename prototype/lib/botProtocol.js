@@ -13,10 +13,15 @@ class token {
     }
 }
 
-class echoToken extends token {
+module.exports.echoToken = class extends token {
     constructor(body) {
         super('echo', body);
     }
-}
+};
 
-module.exports.echoToken = echoToken;
+module.exports.readMagToken = class extends token {
+    constructor() {
+        super('readMag', undefined);
+    }
+};
+
