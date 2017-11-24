@@ -5,12 +5,20 @@
         - pressure
         - video
     Attitude indicator
+    Heading indicator
 
+doctype html
 html
     head
-        title= title
+        title NUGboard
         link(rel='shortcut icon', href='/static/images/nugget.ico', type='image/x-icon')
+        link(rel='stylesheet', type='text/css', href='/static/lib/indicators/css/flightindicators.css')
+        script(src='/static/lib/jquery.js')
+        script(src='/static/lib/indicators/js/jquery.flightindicators.min.js')
         script(src='/static/lib/socket.io.js')
         script(src='/static/dashSocket.js')
     body
-        p= message
+        p greetings
+        span(id='attitude')
+        span(id='heading')
+        button(id='disconnect') disconnect

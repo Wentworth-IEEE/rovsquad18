@@ -8,7 +8,7 @@ class token {
         this.body = body;
     }
 
-    toString() {
+    stringify() {
         return JSON.stringify(this);
     }
 }

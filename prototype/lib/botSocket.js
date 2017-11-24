@@ -17,6 +17,13 @@ module.exports = class {
         this.setUpListeners();
     }
 
+    disconnect() {
+        return new Promise(resolve => {
+            this.socket.end();
+            this.socket.on('close', () => resolve(delete this.socket));
+        })
+    }
+
     setUpListeners() {
         this.socket.on('connect', () => {
             console.log('connected');
@@ -29,9 +36,10 @@ module.exports = class {
     echo(data) {
         return new Promise(resolve => {
             let token = new botProtocol.echoToken(data);
-            this.socket.write(token.toString());
+            this.socket.write(token.stringify());
             this.socket.on('data', data => {
-                resolve(data);
+                resolve(JSON.parse(data));
+                this.socket.removeAllListeners('data');
             })
         });
     }
@@ -39,11 +47,12 @@ module.exports = class {
     readMag() {
         return new Promise(resolve => {
             let token = new botProtocol.readMagToken();
-            this.socket.write(token.toString());
+            this.socket.write(token.stringify());
             this.socket.on('data', data => {
-                resolve(data);
+                resolve(JSON.parse(data));
+                this.socket.removeAllListeners('data');
             })
         })
     }
 
-}
+};

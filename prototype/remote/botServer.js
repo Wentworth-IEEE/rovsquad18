@@ -99,9 +99,9 @@ emitter.on('readMag', () => {
     if (debug) {
         // TODO: make a protocol for this too
         _client.write(JSON.stringify({
-            heading: Math.random() * 2 * Math.PI,
-            pitch: Math.random() * 2 * Math.PI,
-            roll: Math.random() * 2 * Math.PI
+            heading: Math.random() * 2 * Math.PI - Math.PI,
+            pitch: Math.random() * 2 * Math.PI - Math.PI,
+            roll: Math.random() * 2 * Math.PI - Math.PI
         }));
         return;
     }
