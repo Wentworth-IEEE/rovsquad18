@@ -63,6 +63,10 @@ server.on('connection', client => {
     client.on('close', () => {
         console.log('client disconnected');
         _client = undefined;
+    });
+
+    client.on('error', error => {
+        console.error(error);
     })
 });
 

@@ -13,11 +13,12 @@ $(document).ready(() => {
         showBox: false,
         img_directory: imgDirectory
     });
-
     // do some button listeners
+    $('#connect').click(() => {
+        socket.emit('connectToBot')
+    });
     $('#disconnect').click(() => {
         socket.emit('disconnectFromBot');
-        console.log('fiuck');
     });
 });
 // ye olde socket listeners

@@ -21,7 +21,7 @@ module.exports.echoToken = class extends token {
 
 module.exports.readMagToken = class extends token {
     constructor() {
-        super('readMag', undefined);
+        super('readMag', {});
     }
 };
 

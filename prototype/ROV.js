@@ -19,6 +19,10 @@ const dashPort = 80;
 // botSocket stuff
 const botHost = '127.0.0.1';
 const botPort = 8080;
+const options = {
+    host: botHost,
+    port: botPort
+};
 
 // controller!
 const controller = new Controller();
@@ -59,14 +63,11 @@ async function main() {
     // controller.on('open', () => console.log('connection with controller opened'));
     // controller.on('data', data => console.log(data));
 
-    botSocket.connect({
-        host: botHost,
-        port: botPort
-    });
-
     // do this every 1 second
     // some ghetto debugging
     setInterval(async () => {
+        if (!botSocket._isConnected)
+            return;
         let mag = await botSocket.readMag();
         try {
             // convert radians to degrees
@@ -74,6 +75,7 @@ async function main() {
             _dashSocket.emit('readMag', mag);
         }
         catch (error) {
+            // ignore TypeErrors (I can't remember why though)
             if (error instanceof TypeError);
             throw error;
         }
@@ -81,12 +83,17 @@ async function main() {
 
     // set us up some dashboard listeners
     dashboard.on('connection', socket => {
-        socket.on('disconnect', () => _dashSocket = undefined);
-        socket.on('disconnectFromBot', async () => {
-            console.log('disconnecting from robot');
-            await botSocket.disconnect();
-            console.log('disconnected from robot');
+
+        // TODO prevent multiple connetions from same client
+        socket.on('connectToBot', async () => {
+            await botSocket.connect(options);
         });
+        socket.on('disconnectFromBot', async () => {
+            await botSocket.disconnect();
+        });
+
+        // actual socket.io disconnect event from dashboard
+        socket.on('disconnect', () => _dashSocket = undefined);
         _dashSocket = socket;
     });
 
