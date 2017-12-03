@@ -2,9 +2,11 @@
 // 2017
 
 // native dependencies
-const clp = require('clp');
 const net = require('net');
 const EventEmitter = require('events');
+
+// package dependancies
+const clp = require('clp');
 
 /*
  * if -d or --debug is specified as a command line argument

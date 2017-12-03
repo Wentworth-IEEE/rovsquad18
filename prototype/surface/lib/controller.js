@@ -12,7 +12,7 @@ const Readline = SerialPort.parsers.Readline;
 const baudRate = 19200;
 
 // yay!
-class controller extends EventEmitter {
+module.exports = class extends EventEmitter {
 
     constructor() {
         super();
@@ -48,6 +48,4 @@ class controller extends EventEmitter {
         });
     }
 
-}
-
-module.exports = controller;
+};

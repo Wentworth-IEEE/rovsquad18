@@ -17,7 +17,7 @@ const BotSocket = require('./lib/botSocket');
 const viewsDirectory = './dashboard/templates';
 const dashPort = 80;
 // botSocket stuff
-const botHost = '127.0.0.1';
+const botHost = '87.73.84.1';
 const botPort = 8080;
 const options = {
     host: botHost,
@@ -47,7 +47,7 @@ app.get('/', (request, response) => {
     response.render('index');
 });
 // http server shit
-server.listen(dashPort, () => console.log(`dashboard running on http://localhost:${dashPort}`));
+server.listen(dashPort, () => console.log(`dashboard running on localhost:${dashPort}`));
 
 /*
  * 1. controller
@@ -66,31 +66,20 @@ async function main() {
     // do this every 1 second
     // some ghetto debugging
     setInterval(async () => {
-        if (!botSocket._isConnected)
-            return;
+        if (!botSocket._isConnected) return;
         let mag = await botSocket.readMag();
-        try {
-            // convert radians to degrees
-            Object.keys(mag).map(k => mag[k] *= 180 / Math.PI);
-            _dashSocket.emit('readMag', mag);
-        }
-        catch (error) {
-            // ignore TypeErrors (I can't remember why though)
-            if (error instanceof TypeError);
-            throw error;
-        }
+
+        // convert radians to degrees
+        Object.keys(mag).map(k => mag[k] *= 180 / Math.PI);
+        _dashSocket.emit('readMag', mag);
     }, 1000);
 
     // set us up some dashboard listeners
     dashboard.on('connection', socket => {
 
         // TODO prevent multiple connetions from same client
-        socket.on('connectToBot', async () => {
-            await botSocket.connect(options);
-        });
-        socket.on('disconnectFromBot', async () => {
-            await botSocket.disconnect();
-        });
+        socket.on('connectToBot', async () => await botSocket.connect(options));
+        socket.on('disconnectFromBot', async () => await botSocket.disconnect());
 
         // actual socket.io disconnect event from dashboard
         socket.on('disconnect', () => _dashSocket = undefined);
@@ -99,6 +88,4 @@ async function main() {
 
 }
 
-main().catch(error => {
-    console.error(error);
-});
+main().catch(error => console.error(error));
