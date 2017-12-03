@@ -1,0 +1,25 @@
+//- SHIT THAT NEEDS TO GO HERE:
+    Sensor readout
+        - external temp
+        - internal temp
+        - pressure
+        - video
+    Attitude indicator
+    Heading indicator
+
+doctype html
+html
+    head
+        title NUGboard
+        link(rel='shortcut icon', href='/static/images/nugget.ico', type='image/x-icon')
+        link(rel='stylesheet', type='text/css', href='/static/lib/indicators/css/flightindicators.css')
+        script(src='/static/lib/jquery.js')
+        script(src='/static/lib/indicators/js/jquery.flightindicators.min.js')
+        script(src='/static/lib/socket.io.js')
+        script(src='/static/dashSocket.js')
+    body
+        p greetings
+        span(id='attitude')
+        span(id='heading')
+        button(id='connect') connect
+        button(id='disconnect') disconnect
