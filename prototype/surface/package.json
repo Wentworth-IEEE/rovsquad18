@@ -9,6 +9,7 @@
   "author": "Bobby Martin",
   "license": "ISC",
   "dependencies": {
+    "botprotocol": "file:../packages/botProtocol",
     "express": "^4.16.2",
     "pug": "^2.0.0-rc.4",
     "serialport": "^5.0.0",

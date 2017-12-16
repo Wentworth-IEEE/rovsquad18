@@ -9,6 +9,7 @@
   "author": "Bobby Martin",
   "license": "ISC",
   "dependencies": {
+    "botprotocol": "file:../packages/botProtocol",
     "clp": "^4.0.8"
   }
 }

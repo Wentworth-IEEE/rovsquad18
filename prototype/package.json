@@ -4,12 +4,13 @@
   "description": "WIT IEEE Underwater ROV 2018 prototype surface station",
   "main": "ROV.js",
   "scripts": {
-    "deploy": "node scripts/deploy.js",
+    "deploy": "node packages/deploy",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Bobby Martin",
   "license": "ISC",
   "dependencies": {
-    "clp": "^4.0.8"
+    "clp": "^4.0.8",
+    "deploy": "file:packages/deploy"
   }
 }

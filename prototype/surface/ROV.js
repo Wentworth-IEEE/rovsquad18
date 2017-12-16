@@ -14,7 +14,6 @@ const BotSocket = require('./lib/botSocket');
 
 // global constants
 // dashboard stuff
-const viewsDirectory = './dashboard/templates';
 const dashPort = 80;
 // botSocket stuff
 const botHost = '87.73.84.1';
@@ -38,14 +37,13 @@ const dashboard = io(server);
 let _dashSocket;
 // express/webserver stuff
 app.set('view engine', 'pug');
-app.set('views', viewsDirectory);
-app.use('/static', express.static('dashboard/static'));
+app.set('views', __dirname + '/dashboard/templates');
+app.use('/static', express.static(__dirname + '/dashboard/static'));
 app.locals.pretty = true;
+
 // GET renderer
-app.get('/', (request, response) => {
-    app.locals.pretty = true;
-    response.render('index');
-});
+app.get('/', (request, response) => response.render('index'));
+
 // http server shit
 server.listen(dashPort, () => console.log(`dashboard running on localhost:${dashPort}`));
 

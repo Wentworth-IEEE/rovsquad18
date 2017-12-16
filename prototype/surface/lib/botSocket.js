@@ -4,8 +4,8 @@
 // native depensancies
 const net = require('net');
 
-// local dependancies
-const botProtocol = require('./botProtocol');
+// local package dependancies
+const botProtocol = require('botprotocol');
 
 // TODO: figure out a way to give each command a unique ID so command responses don't get all mangled maybe???
 

@@ -24,8 +24,9 @@ const debug = argv['d'] || argv['debug'];
 const startSurface = argv['s'] || argv['startSurface'];
 
 // FUCKING WINDOWS
-const cmd = /^win/.test(process.platform) ? 'npm.cmd' : 'npm';
-const scp = /^win/.test(process.platform) ? 'pscp' : 'scp';
+const isWindows = /^win/.test(process.platform);
+const cmd = isWindows ? 'npm.cmd' : 'npm';
+const scp = isWindows ? 'pscp' : 'scp';
 
 async function main() {
 

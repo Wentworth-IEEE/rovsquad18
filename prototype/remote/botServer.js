@@ -8,6 +8,9 @@ const EventEmitter = require('events');
 // package dependancies
 const clp = require('clp');
 
+// local package dependancies
+const botProtocol = require('botprotocol').commands;
+
 /*
  * if -d or --debug is specified as a command line argument
  * run server on 127.0.0.1 (localhost)
@@ -20,15 +23,17 @@ if (debug)
 
 // global constants
 // TODO: figure out a more efficient way to get the pi's address
-const piHost = '0.0.0.0'; // this will eventually be the address of the pi we want to host this on
+const piHost = '0.0.0.0';   // this will eventually be the address of the pi we want to host this on
 const port = 8080;
 const emitter = new EventEmitter();
+const magFrequency = 1000;
 
 // global constants that rely on ohter things
 const address = debug ? '127.0.0.1' : piHost;
 
 // global not-constants
 let _client;
+let _magInterval;
 
 // **********************************
 // begin server logic & listener shit
@@ -93,17 +98,16 @@ server.on('connection', client => {
  * It will then use the 'emitter' object to emit an 'echo' event with
  * "hello from the client" as the callback parameter
  */
-emitter.on('echo', body => {
-    _client.write(JSON.stringify({
-        response: body
-    }));
-});
+emitter.on(botProtocol.ECHO, body => _client.write(JSON.stringify({ response: body })));
+emitter.on(botProtocol.READMAG, readMag);
+emitter.on(botProtocol.STARTMAGSTREAM, () => _magInterval = setInterval(readMag, magFrequency));
+emitter.on(botProtocol.STOPMAGSTREAM, () => clearInterval(_magInterval));
 
 // readMag event
-emitter.on('readMag', () => {
+function readMag() {
     // if we're in debug mode, send back random values from [0 - 2pi) radians
     if (debug) {
-        // TODO: make a protocol for this too
+        // TODO: make a protocol for this too?
         _client.write(JSON.stringify({
             heading: Math.random() * 2 * Math.PI - Math.PI,
             pitch: Math.random() * 2 * Math.PI - Math.PI,
@@ -112,4 +116,4 @@ emitter.on('readMag', () => {
         return;
     }
     // Chris' sensor library call would go here
-});
+};

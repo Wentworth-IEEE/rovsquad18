@@ -1,0 +1,11 @@
+{
+  "name": "botprotocol",
+  "version": "1.0.0",
+  "description": "tokens for surface <-> bot communication",
+  "main": "botProtocol.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Bobby Martin",
+  "license": "ISC"
+}
