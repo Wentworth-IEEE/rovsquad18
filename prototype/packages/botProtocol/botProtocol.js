@@ -1,14 +1,15 @@
 // Bobby Martin
 // 2017
 
-module.exports.commands = {
+const tokenTypes = {
     ECHO: 'echo',
     READMAG: 'readMag',
     STARTMAGSTREAM: 'startMagStream',
     STOPMAGSTREAM: 'stopMagStream'
 };
+module.exports.tokenTypes = tokenTypes;
 
-// all tokens should extend this class
+// all tokenTypes should extend this class
 class token {
     constructor(type, body) {
         this.type = type;
@@ -22,24 +23,24 @@ class token {
 
 module.exports.echoToken = class extends token {
     constructor(body) {
-        super(commands.ECHO, body);
+        super(tokenTypes.ECHO, body);
     }
 };
 
 module.exports.readMagToken = class extends token {
     constructor() {
-        super(commands.READMAG, {});
+        super(tokenTypes.READMAG, {});
     }
 };
 
 module.exports.startmagStreamToken = class extends token {
     constructor() {
-        super(commands.STARTMAGSTREAM, {})
+        super(tokenTypes.STARTMAGSTREAM, {})
     }
 };
 
 module.exports.startmagStreamToken = class extends token {
     constructor() {
-        super(commands.STOPMAGSTREAM, {})
+        super(tokenTypes.STOPMAGSTREAM, {})
     }
 };

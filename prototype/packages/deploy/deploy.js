@@ -17,7 +17,6 @@ const { spawn, fork } = require('child_process');
 // package dependencies
 const clp = require('clp');
 
-
 // global constants
 const argv = clp(process.argv);
 const debug = argv['d'] || argv['debug'];
@@ -28,49 +27,52 @@ const isWindows = /^win/.test(process.platform);
 const cmd = isWindows ? 'npm.cmd' : 'npm';
 const scp = isWindows ? 'pscp' : 'scp';
 
-async function main() {
-
+async function setupRobot() {
     // npm install in the remote directory
     await new Promise(resolve => {
-        const remoteInstall = spawn(cmd, ['install'], {
+        const npmInstallBot = spawn(cmd, ['install'], {
             cwd: './remote',
             stdio: 'inherit'
         });
-        remoteInstall.once('exit', () => resolve())
+        npmInstallBot.once('exit', () => resolve())
     });
 
     console.log('starting bot server');
-    if (debug)
-        // if we're in debug mode, spawn botServer in debug mode
-        fork('./remote/botServer.js', ['--debug']);
-    else
-        // otherwise we'll do all the file copying and executing here
-        await new Promise(resolve => {
-            const remoteCopy = spawn(scp, [
-                '-r',
-                'remote/',
-                'root@87.73.84.1:/opt/rov2017'
-            ], { stdio: 'inherit' });
-            remoteCopy.on('exit', () => resolve());
+    // if we're in debug mode, spawn botServer in debug mode
+    if (debug) return fork('./remote/botServer.js', ['--debug'], {
+        execArgv: ['--inspect'],
+        silent: true
+    });
+
+    // otherwise we'll do all the file copying and executing here
+    await new Promise(resolve => {
+        // copy files to robot, resolve when complete
+        const remoteCopy = spawn(scp, [
+            '-r',
+            'remote/',
+            'root@87.73.84.1:/opt/rov2017'
+        ]);
+        remoteCopy.on('exit', () => resolve());
+    });
+}
+
+async function setupSurface() {
+    // npm install in the surface directory
+    await new Promise(resolve => {
+        const npmInstallSurface = spawn(cmd, ['install'], {
+            cwd: './surface',
+            stdio: 'inherit'
         });
+        npmInstallSurface.once('exit', () => resolve())
+    });
+    // give it a start job
+    fork('surface/ROV.js');
+}
 
-    ///////////////////////
-    // LOGICAL DELIMITER //
-    ///////////////////////
-
+async function main() {
+    await setupRobot();
     // start the surface station too if it was specified
-    if (startSurface) {
-        // npm install in the surface directory
-        await new Promise(resolve => {
-            const surfaceInstall = spawn(cmd, ['install'], {
-                cwd: './surface',
-                stdio: 'inherit'
-            });
-            surfaceInstall.once('exit', () => resolve())
-        });
-        // give it a start job
-        fork('surface/ROV.js');
-    }
+    if (startSurface) await setupSurface();
 }
 
 main().catch(error => console.error(error));

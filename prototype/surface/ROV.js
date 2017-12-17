@@ -16,7 +16,7 @@ const BotSocket = require('./lib/botSocket');
 // dashboard stuff
 const dashPort = 80;
 // botSocket stuff
-const botHost = '87.73.84.1';
+const botHost = '127.0.0.1';
 const botPort = 8080;
 const options = {
     host: botHost,

@@ -9,7 +9,7 @@ const EventEmitter = require('events');
 const clp = require('clp');
 
 // local package dependancies
-const botProtocol = require('botprotocol').commands;
+const { tokenTypes } = require('botprotocol');
 
 /*
  * if -d or --debug is specified as a command line argument
@@ -35,9 +35,9 @@ const address = debug ? '127.0.0.1' : piHost;
 let _client;
 let _magInterval;
 
-// **********************************
-// begin server logic & listener shit
-// **********************************
+//////////////////////////////////
+// server logic & listener shit //
+//////////////////////////////////
 
 const server = net.createServer();
 server.listen({
@@ -84,8 +84,8 @@ server.on('connection', client => {
  * like last year, we're using an event emitter now.
  *
  * When this server gets data from the client, it will presumably be in
- * the form of a stringified botProtocol token. botProtocol tokens have
- * 'type' and 'body' keys. When the server gets one of these tokens, the
+ * the form of a stringified botProtocol token. botProtocol tokenTypes have
+ * 'type' and 'body' keys. When the server gets one of these tokenTypes, the
  * 'emitter' will emit an event with the token's 'type' as the event name
  * and with the token's body as the callback parameter.
  *
@@ -98,12 +98,11 @@ server.on('connection', client => {
  * It will then use the 'emitter' object to emit an 'echo' event with
  * "hello from the client" as the callback parameter
  */
-emitter.on(botProtocol.ECHO, body => _client.write(JSON.stringify({ response: body })));
-emitter.on(botProtocol.READMAG, readMag);
-emitter.on(botProtocol.STARTMAGSTREAM, () => _magInterval = setInterval(readMag, magFrequency));
-emitter.on(botProtocol.STOPMAGSTREAM, () => clearInterval(_magInterval));
+emitter.on(tokenTypes.ECHO, body => _client.write(JSON.stringify({ response: body })));
+emitter.on(tokenTypes.READMAG, readMag);
+emitter.on(tokenTypes.STARTMAGSTREAM, () => _magInterval = setInterval(readMag, magFrequency));
+emitter.on(tokenTypes.STOPMAGSTREAM, () => clearInterval(_magInterval));
 
-// readMag event
 function readMag() {
     // if we're in debug mode, send back random values from [0 - 2pi) radians
     if (debug) {
