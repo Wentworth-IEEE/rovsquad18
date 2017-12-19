@@ -101,12 +101,12 @@ module.exports = class {
     }
 
     // this is incomplete
-    startMagStreaming(interval) {
-        return new Promise(resolve => {
-            const token = new botProtocol.startmagStreamToken(interval);
-            this._socket.write(token.stringify());
-            // TODO: https://trello.com/c/nXncpk9v
-        })
-    }
+    // startMagStreaming(interval) {
+    //     return new Promise(resolve => {
+    //         const token = new botProtocol.startmagStreamToken(interval);
+    //         this._socket.write(token.stringify());
+    //         // TODO: https://trello.com/c/nXncpk9v
+    //     })
+    // }
 
 };

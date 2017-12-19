@@ -102,8 +102,8 @@ server.on('connection', client => {
 emitter.on(tokenTypes.ECHO, echo);
 emitter.on(tokenTypes.READMAG, readMag);
 // TODO: https://trello.com/c/nXncpk9v
-emitter.on(tokenTypes.STARTMAGSTREAM, startMagStream);
-emitter.on(tokenTypes.STOPMAGSTREAM, stopMagStream);
+// emitter.on(tokenTypes.STARTMAGSTREAM, startMagStream);
+// emitter.on(tokenTypes.STOPMAGSTREAM, stopMagStream);
 
 // respond with the same body as the request
 function echo(data) {
@@ -126,12 +126,10 @@ function readMag(data) {
 }
 
 // this is incomplete and hadn't been tested
-function startMagStream(data) {
-    // TODO: figure out how to send response token and shit
-    _magInterval = setInterval(readMag, magFrequency);
-}
-
-function stopMagStream(data) {
-    // TODO: more stuff here
-    clearInterval(_magInterval);
-}
+// function startMagStream(data) {
+//     _magInterval = setInterval(readMag, magFrequency);
+// }
+//
+// function stopMagStream(data) {
+//     clearInterval(_magInterval);
+// }
