@@ -9,7 +9,7 @@ const EventEmitter = require('events');
 const clp = require('clp');
 
 // local package dependancies
-const { tokenTypes } = require('botprotocol');
+const { tokenTypes, responseToken } = require('botprotocol');
 
 /*
  * if -d or --debug is specified as a command line argument
@@ -64,7 +64,7 @@ server.on('connection', client => {
     client.on('data', data => {
         console.log(`Hey I got this: ${data}`);
         data = JSON.parse(data);
-        emitter.emit(data.type, data.body);
+        emitter.emit(data.type, data);
     });
 
     client.on('close', () => {
@@ -90,6 +90,7 @@ server.on('connection', client => {
  * and with the token's body as the callback parameter.
  *
  * example:
+ * TODO: update me pls I'm out of date
  * The server recieves the following token:
  * {
  *   type: "echo",
@@ -98,21 +99,39 @@ server.on('connection', client => {
  * It will then use the 'emitter' object to emit an 'echo' event with
  * "hello from the client" as the callback parameter
  */
-emitter.on(tokenTypes.ECHO, body => _client.write(JSON.stringify({ response: body })));
+emitter.on(tokenTypes.ECHO, echo);
 emitter.on(tokenTypes.READMAG, readMag);
-emitter.on(tokenTypes.STARTMAGSTREAM, () => _magInterval = setInterval(readMag, magFrequency));
-emitter.on(tokenTypes.STOPMAGSTREAM, () => clearInterval(_magInterval));
+// TODO: https://trello.com/c/nXncpk9v
+emitter.on(tokenTypes.STARTMAGSTREAM, startMagStream);
+emitter.on(tokenTypes.STOPMAGSTREAM, stopMagStream);
 
-function readMag() {
-    // if we're in debug mode, send back random values from [0 - 2pi) radians
+// respond with the same body as the request
+function echo(data) {
+    const response = new responseToken(data.body, data.headers.transactionID);
+    _client.write(response.stringify());
+}
+
+function readMag(data) {
+    // if we're in debug mode, send back random values from [-pi - pi) radians
     if (debug) {
-        // TODO: make a protocol for this too?
-        _client.write(JSON.stringify({
+        const response = new responseToken({
             heading: Math.random() * 2 * Math.PI - Math.PI,
             pitch: Math.random() * 2 * Math.PI - Math.PI,
             roll: Math.random() * 2 * Math.PI - Math.PI
-        }));
+        }, data.headers.transactionID);
+        _client.write(response.stringify());
         return;
     }
     // Chris' sensor library call would go here
-};
+}
+
+// this is incomplete and hadn't been tested
+function startMagStream(data) {
+    // TODO: figure out how to send response token and shit
+    _magInterval = setInterval(readMag, magFrequency);
+}
+
+function stopMagStream(data) {
+    // TODO: more stuff here
+    clearInterval(_magInterval);
+}
