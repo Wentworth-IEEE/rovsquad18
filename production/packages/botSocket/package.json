@@ -1,14 +1,14 @@
 {
-  "name": "deploy",
+  "name": "botsocket",
   "version": "1.0.0",
-  "description": "For deploying fun things to the robot",
-  "main": "deploy.js",
+  "description": "API for talking to the bot",
+  "main": "botSocket.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Bobby Martin",
   "license": "ISC",
   "dependencies": {
-    "clp": "^4.0.8"
+    "botprotocol": "file:../botProtocol"
   }
 }

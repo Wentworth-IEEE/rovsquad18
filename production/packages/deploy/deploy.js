@@ -52,7 +52,8 @@ async function setupRobot() {
             'remote/',
             'root@87.73.84.1:/opt/rov2017'
         ]);
-        remoteCopy.on('exit', () => resolve());
+        remoteCopy.once('exit', () => resolve());
+        // TODO: (blocked) start botServer on pi after copying [https://trello.com/c/kNBrK7R5]
     });
 }
 
@@ -76,3 +77,6 @@ async function main() {
 }
 
 main().catch(error => console.error(error));
+
+module.exports.setupRobot = setupRobot;
+module.exports.setupSurface = setupSurface;

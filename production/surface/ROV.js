@@ -9,8 +9,8 @@ const express = require('express');
 const io = require('socket.io');
 
 // local dependancies
-const Controller = require('./lib/controller');
-const BotSocket = require('./lib/botSocket');
+const Controller = require('controller');
+const BotSocket = require('botsocket');
 
 // global constants
 // dashboard stuff
@@ -30,7 +30,6 @@ const controller = new Controller();
 const botSocket = new BotSocket();
 
 // socket.io stuff
-// TODO: make this big ugly chunk of shit into its own library
 const app = express();
 const server = http.Server(app);
 const dashboard = io(server);

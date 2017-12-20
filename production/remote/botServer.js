@@ -18,8 +18,7 @@ const { tokenTypes, responseToken } = require('botprotocol');
  */
 const argv = clp(process.argv);
 const debug = argv['d'] || argv['debug'];
-if (debug)
-    console.log('running in debug mode');
+if (debug) console.log('running in debug mode');
 
 // global constants
 // TODO: figure out a more efficient way to get the pi's address
