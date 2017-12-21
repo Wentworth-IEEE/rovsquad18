@@ -4,9 +4,13 @@
   "description": "WIT IEEE Underwater ROV 2018 surface station",
   "main": "ROV.js",
   "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "node packages/deploy",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "bootstrap": "lerna bootstrap"
   },
   "author": "Bobby Martin",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "lerna": "^2.5.1"
+  }
 }
