@@ -28,14 +28,6 @@ const cmd = isWindows ? 'npm.cmd' : 'npm';
 const scp = isWindows ? 'pscp' : 'scp';
 
 async function setupRobot(debug) {
-    // npm install in the remote directory
-    await new Promise(resolve =>
-        spawn(cmd, ['install'], {
-            cwd: __dirname + '/../../remote',
-            stdio: 'inherit'
-        }).on('exit', resolve)
-    );
-
     console.log('starting bot server');
     /*
      * if we're in debug mode, spawn botServer in debug mode
@@ -64,13 +56,6 @@ async function setupRobot(debug) {
 }
 
 async function setupSurface() {
-    // npm install in the surface directory
-    await new Promise(resolve =>
-        spawn(cmd, ['install'], {
-            cwd: __dirname + '/../../surface',
-            stdio: 'inherit'
-        }).on('exit', resolve)
-    );
     // give it a start job
     fork(__dirname + '/../../surface/ROV.js');
 }
