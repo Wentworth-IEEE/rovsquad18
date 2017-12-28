@@ -11,6 +11,11 @@ const clp = require('clp');
 // local package dependancies
 const { tokenTypes, responseToken } = require('botprotocol');
 
+// make process.send do nothing if botServer was not spawned as a child process
+process.send = process.send || function() {};
+// exit on any message from parent process
+process.on('message', process.exit);
+
 /*
  * if -d or --debug is specified as a command line argument
  * run server on 127.0.0.1 (localhost)
@@ -47,7 +52,8 @@ server.listen({
 
 // listening listener (heh)
 server.on('listening', () => {
-    console.log(`server is listening at ${address}:${port}`)
+    console.log(`server is listening at ${address}:${port}`);
+    process.send('listening');
 });
 
 // error listener
@@ -100,7 +106,7 @@ server.on('connection', client => {
  */
 emitter.on(tokenTypes.ECHO, echo);
 emitter.on(tokenTypes.READMAG, readMag);
-// TODO: https://trello.com/c/nXncpk9v
+// TODO: https://trello.com/c/kP2tI6ZV
 // emitter.on(tokenTypes.STARTMAGSTREAM, startMagStream);
 // emitter.on(tokenTypes.STOPMAGSTREAM, stopMagStream);
 

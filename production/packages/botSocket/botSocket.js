@@ -6,7 +6,7 @@ const net = require('net');
 const EventEmitter = require('events');
 
 // local package dependancies
-const botProtocol = require('botProtocol');
+const botProtocol = require('botprotocol');
 
 // global constants
 const emitter = new EventEmitter();

@@ -27,56 +27,62 @@ const isWindows = /^win/.test(process.platform);
 const cmd = isWindows ? 'npm.cmd' : 'npm';
 const scp = isWindows ? 'pscp' : 'scp';
 
-async function setupRobot() {
+async function setupRobot(debug) {
     // npm install in the remote directory
-    await new Promise(resolve => {
-        const npmInstallBot = spawn(cmd, ['install'], {
-            cwd: './remote',
+    await new Promise(resolve =>
+        spawn(cmd, ['install'], {
+            cwd: __dirname + '/../../remote',
             stdio: 'inherit'
-        });
-        npmInstallBot.once('exit', () => resolve())
-    });
+        }).on('exit', resolve)
+    );
 
     console.log('starting bot server');
-    // if we're in debug mode, spawn botServer in debug mode
-    if (debug) return fork('./remote/botServer.js', ['--debug'], {
-        execArgv: ['--inspect'],
-        silent: true
+    /*
+     * if we're in debug mode, spawn botServer in debug mode
+     * resolve when the server sends an IPC message
+     * TODO:
+     * this is done kind of weirdly
+     * can we make it better?
+     */
+    if (debug) return new Promise(resolve => {
+        const child = fork(__dirname + '/../../remote/botServer.js', ['--debug'], {
+            execArgv: ['--inspect'],
+            stdio: ['pipe', 'pipe', 'pipe', 'ipc']
+        }).on('message', () => resolve(child));
     });
 
     // otherwise we'll do all the file copying and executing here
-    await new Promise(resolve => {
+    await new Promise(resolve =>
         // copy files to robot, resolve when complete
-        const remoteCopy = spawn(scp, [
+        spawn(scp, [
             '-r',
             'remote/',
             'root@87.73.84.1:/opt/rov2017'
-        ]);
-        remoteCopy.once('exit', () => resolve());
+        ]).on('exit', resolve)
         // TODO: (blocked) start botServer on pi after copying [https://trello.com/c/kNBrK7R5]
-    });
+    );
 }
 
 async function setupSurface() {
     // npm install in the surface directory
-    await new Promise(resolve => {
-        const npmInstallSurface = spawn(cmd, ['install'], {
-            cwd: './surface',
+    await new Promise(resolve =>
+        spawn(cmd, ['install'], {
+            cwd: __dirname + '/../../surface',
             stdio: 'inherit'
-        });
-        npmInstallSurface.once('exit', () => resolve())
-    });
+        }).on('exit', resolve)
+    );
     // give it a start job
-    fork('surface/ROV.js');
+    fork(__dirname + '/../../surface/ROV.js');
 }
 
 async function main() {
-    await setupRobot();
+    await setupRobot(debug);
     // start the surface station too if it was specified
     if (startSurface) await setupSurface();
 }
 
-main().catch(error => console.error(error));
+// if __name__ == "__main__" type of thing
+if (require.main === module)
+    main().catch(error => console.error(error));
 
 module.exports.setupRobot = setupRobot;
-module.exports.setupSurface = setupSurface;
