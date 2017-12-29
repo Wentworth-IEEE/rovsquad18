@@ -1,5 +1,10 @@
-// Bobby Martin
-// 2017
+/**
+ * botServer.js
+ * for running on the robot
+ *
+ * Bobby Martin
+ * 2017
+ */
 
 // native dependencies
 const net = require('net');
@@ -9,7 +14,7 @@ const EventEmitter = require('events');
 const clp = require('clp');
 
 // local package dependancies
-const { tokenTypes, responseToken } = require('botprotocol');
+const { tokenTypes, responseTypes, responseToken } = require('botprotocol');
 
 // make process.send do nothing if botServer was not spawned as a child process
 process.send = process.send || function() {};
@@ -30,7 +35,6 @@ if (debug) console.log('running in debug mode');
 const piHost = '0.0.0.0';   // this will eventually be the address of the pi we want to host this on
 const port = 8080;
 const emitter = new EventEmitter();
-const magFrequency = 1000;
 
 // global constants that rely on ohter things
 const address = debug ? '127.0.0.1' : piHost;
@@ -66,49 +70,55 @@ server.on('connection', client => {
     console.log('client connected');
     _client = client;
 
-    client.on('data', data => {
-        console.log(`Hey I got this: ${data}`);
-        data = JSON.parse(data);
-        emitter.emit(data.type, data);
-    });
-
-    client.on('close', () => {
-        console.log('client disconnected');
-        _client = undefined;
-    });
-
-    client.on('error', error => {
-        console.error(error);
-    })
+    client.on('data', onClientData);
+    client.on('close', onClientDisconnect);
+    client.on('error', onClientError);
 });
+
+function onClientData(data) {
+    console.log(`Hey I got this: ${data}`);
+    data = JSON.parse(data);
+    emitter.emit(data.type, data);
+}
+
+function onClientDisconnect() {
+    console.log('client disconnected');
+    /*
+     * TODO:
+     * should this interval be cleared here when the client disconnects from the bot
+     * or explicitly as a command from the surface when it disconnects or both?
+     */
+    clearInterval(_magInterval);
+    _client = null;
+}
+
+function onClientError(error) {
+    console.error(error);
+}
 
 /*
  * EMITTER LOGIC
  *
  * Instead of having a big disgusting switch statement to handle commands
- * like last year, we're using an event emitter now.
+ * like two years ago, we're using an event emitter now.
  *
- * When this server gets data from the client, it will presumably be in
- * the form of a stringified botProtocol token. botProtocol tokenTypes have
- * 'type' and 'body' keys. When the server gets one of these tokenTypes, the
- * 'emitter' will emit an event with the token's 'type' as the event name
- * and with the token's body as the callback parameter.
- *
- * example:
- * TODO: update me pls I'm out of date
- * The server recieves the following token:
+ * This server gets data from the surface in the form of stringified botProtocol tokens.
+ * botProtocol tokens look like this:
  * {
- *   type: "echo",
- *   body: "hello from the client"
+ *   type: [botProtocol.tokenType]
+ *   headers: {
+ *     transactionID: [UUIDv1]
+ *   }
+ *   body: [whatever ur feelin]
  * }
- * It will then use the 'emitter' object to emit an 'echo' event with
- * "hello from the client" as the callback parameter
+ * When the server gets one of these tokens, [emitter] will emit an event with the token's
+ * 'type' as the event name and with the whole token itself as the callback parameter.
+ * The token is recieved as a string and is parsed to an object before it is emitted.
  */
 emitter.on(tokenTypes.ECHO, echo);
 emitter.on(tokenTypes.READMAG, readMag);
-// TODO: https://trello.com/c/kP2tI6ZV
-// emitter.on(tokenTypes.STARTMAGSTREAM, startMagStream);
-// emitter.on(tokenTypes.STOPMAGSTREAM, stopMagStream);
+emitter.on(tokenTypes.STARTMAGSTREAM, startMagStream);
+emitter.on(tokenTypes.STOPMAGSTREAM, stopMagStream);
 
 // respond with the same body as the request
 function echo(data) {
@@ -130,11 +140,32 @@ function readMag(data) {
     // Chris' sensor library call would go here
 }
 
-// this is incomplete and hadn't been tested
-// function startMagStream(data) {
-//     _magInterval = setInterval(readMag, magFrequency);
-// }
-//
-// function stopMagStream(data) {
-//     clearInterval(_magInterval);
-// }
+function startMagStream(data) {
+    clearInterval(_magInterval);
+    /*
+     * dummyToken is used as a fake token to pass to the readMag function.
+     * since readMag only ever looks at the token's transactionID, we can
+     * trick it into sending a response token with the a pre-determined
+     * transactionID. The surface station will then emit an event of that
+     * pre-determined type, and we can handle that event knowing that it's
+     * a response from the magStream.
+     */
+    const dummyToken = {
+        headers: {
+            transactionID: responseTypes.MAGDATA
+        }
+    };
+    // set up the ol' interval
+    _magInterval = setInterval(readMag, data.body.interval, dummyToken);
+
+    // respond anyway cuz they all do that
+    const response = new responseToken({}, data.headers.transactionID);
+    _client.write(response.stringify());
+}
+
+function stopMagStream(data) {
+    clearInterval(_magInterval);
+
+    const response = new responseToken({}, data.headers.transactionID);
+    _client.write(response.stringify());
+}

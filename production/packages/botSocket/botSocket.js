@@ -1,17 +1,36 @@
-// Bobby Martin
-// 2017
+/**
+ * botSocket.js
+ * an API for talking to botServer.js
+ *
+ * Bobby Martin
+ * 2017
+ */
 
 // native depensancies
 const net = require('net');
 const EventEmitter = require('events');
 
 // local package dependancies
-const botProtocol = require('botprotocol');
+const botProtocol = require('botprotocol'),
+    responseTypes = botProtocol.responseTypes;
 
 // global constants
+/*
+ * emitter is used to emit responses from the server with the event
+ * type being the transactionID of the response.
+ */
 const emitter = new EventEmitter();
 
-module.exports = class {
+class botSocket extends EventEmitter {
+
+    constructor() {
+        super();
+        // set up magData event listener
+        // is this the right place to set this up? only time will tell...
+        emitter.on(responseTypes.MAGDATA, data => {
+            this.emit('magData', data.body);
+        })
+    }
 
     async connect(options) {
         // if we're busy connecting
@@ -36,20 +55,26 @@ module.exports = class {
             });
 
             // let ya boy know when there's an error
-            this._socket.once('error', error => {
+            this._socket.on('error', error => {
                 console.error(error);
                 reject(error);
             });
 
             // DATA TIME
             this._socket.on('data', data => {
-                // emit transactionID event with data as callback parameter
-                data = JSON.parse(data);
-                emitter.emit(data.headers.transactionID, data);
+                /*
+                 * emit transactionID event with data as callback parameter
+                 * sometimes data comes all mangled up and its SUPER GOOFY
+                 * so we have to
+                 */
+                data.toString().replace(/}{/g, '}|{').split('|').forEach(datum => {
+                    datum = JSON.parse(datum);
+                    emitter.emit(datum.headers.transactionID, datum);
+                })
             });
 
             // do this once per instance of this._socket on 'close'
-            this._socket.once('close', hadError => {
+            this._socket.on('close', hadError => {
                 if (hadError) console.log('disconnected with error');
                 else console.log('disconnected');
                 this._isConnected = false;
@@ -68,21 +93,41 @@ module.exports = class {
                 return resolve();
             }
             this._socket.end();
-            this._socket.once('close', hadError => {
+            this._socket.on('close', hadError => {
                 resolve(hadError);
             });
         });
     }
 
+    async echo(data) {
+        const token = new botProtocol.echoToken(data);
+        return await this.sendToken(token);
+    }
+
+    async readMag() {
+        const token = new botProtocol.readMagToken();
+        return await this.sendToken(token);
+    }
+
+    async startMagStream(interval) {
+        const token = new botProtocol.startMagStreamToken(interval);
+        return await this.sendToken(token);
+    }
+
+    async stopMagStream() {
+        const token = new botProtocol.stopMagStreamToken();
+        return await this.sendToken(token);
+    }
+
     /**
      * send an echo token to the robot
-     * resolve with response that has the same transactionID
-     * @param data - data to be echoed
+     * resolve with body of response that has the same transactionID
+     * @param token - token to be sent
      * @returns {Promise}
      */
-    echo(data) {
+    sendToken(token) {
+        console.log('sending token');
         return new Promise(resolve => {
-            const token = new botProtocol.echoToken(data);
             this._socket.write(token.stringify());
             emitter.once(token.headers.transactionID, data => {
                 resolve(data.body);
@@ -90,23 +135,6 @@ module.exports = class {
         });
     }
 
-    readMag() {
-        return new Promise(resolve => {
-            const token = new botProtocol.readMagToken();
-            this._socket.write(token.stringify());
-            emitter.once(token.headers.transactionID, data => {
-                resolve(data.body);
-            });
-        });
-    }
+}
 
-    // this is incomplete
-    // startMagStreaming(interval) {
-    //     return new Promise(resolve => {
-    //         const token = new botProtocol.startmagStreamToken(interval);
-    //         this._socket.write(token.stringify());
-    //         // TODO: https://trello.com/c/nXncpk9v
-    //     })
-    // }
-
-};
+module.exports = botSocket;

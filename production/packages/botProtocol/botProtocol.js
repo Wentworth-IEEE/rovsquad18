@@ -1,5 +1,10 @@
-// Bobby Martin
-// 2017
+/**
+ * botProtocol.js
+ * contains all the tokens for surface <-> robot communication
+ *
+ * Bobby Martin
+ * 2017
+ */
 
 // package dependancies
 const uuidv1 = require('uuid/v1');
@@ -13,7 +18,9 @@ const tokenTypes = {
     STARTMAGSTREAM: 'startMagStream',
     STOPMAGSTREAM: 'stopMagStream'
 };
-module.exports.tokenTypes = tokenTypes;
+const responseTypes = {
+    MAGDATA: 'magData'
+};
 
 // all tokens should extend this class
 class token {
@@ -31,33 +38,44 @@ class token {
 }
 
 // RESPONSE TOKEN
-module.exports.responseToken = class extends token {
+class responseToken extends token {
     constructor(body, transactionID) {
         super(tokenTypes.RESPONSE, body, transactionID);
     }
-};
+}
 
 // EVERYTHING ELSE
-module.exports.echoToken = class extends token {
+class echoToken extends token {
     constructor(body) {
         super(tokenTypes.ECHO, body);
     }
-};
+}
 
-module.exports.readMagToken = class extends token {
+class readMagToken extends token {
     constructor() {
         super(tokenTypes.READMAG, {});
     }
-};
+}
 
-module.exports.startmagStreamToken = class extends token {
+class startMagStreamToken extends token {
     constructor(interval) {
         super(tokenTypes.STARTMAGSTREAM, { interval: interval });
     }
-};
+}
 
-module.exports.startmagStreamToken = class extends token {
+class stopMagStreamToken extends token {
     constructor() {
         super(tokenTypes.STOPMAGSTREAM, {});
     }
+}
+
+module.exports = {
+    tokenTypes: tokenTypes,
+    responseTypes: responseTypes,
+    // actual tokens
+    responseToken: responseToken,
+    echoToken: echoToken,
+    readMagToken: readMagToken,
+    startMagStreamToken: startMagStreamToken,
+    stopMagStreamToken: stopMagStreamToken
 };

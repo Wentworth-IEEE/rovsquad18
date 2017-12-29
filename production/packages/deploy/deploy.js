@@ -23,9 +23,7 @@ const debug = argv['d'] || argv['debug'];
 const startSurface = argv['s'] || argv['startSurface'];
 
 // FUCKING WINDOWS
-const isWindows = /^win/.test(process.platform);
-const cmd = isWindows ? 'npm.cmd' : 'npm';
-const scp = isWindows ? 'pscp' : 'scp';
+const scp = /^win/.test(process.platform) ? 'pscp' : 'scp';
 
 async function setupRobot(debug) {
     console.log('starting bot server');

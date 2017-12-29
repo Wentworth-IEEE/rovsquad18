@@ -1,3 +1,4 @@
+
 // Bobby Martin
 // 2017
 
@@ -22,6 +23,19 @@ const options = {
     host: botHost,
     port: botPort
 };
+// so that the dashboard doesn't blow up in our face when we leave or try to re-load
+const dummySocket = {
+    reset: () => {
+        this.notified = false;
+        return dummySocket;
+    },
+    emit: () => {
+        if (this.notified)
+            return;
+        console.log('dashboard disconnected WHAT HAVE YOU DONE');
+        this.notified = true;
+    }
+};
 
 // controller!
 const controller = new Controller();
@@ -33,7 +47,7 @@ const botSocket = new BotSocket();
 const app = express();
 const server = http.Server(app);
 const dashboard = io(server);
-let _dashSocket;
+let _dashSocket = dummySocket;
 // express/webserver stuff
 app.set('view engine', 'pug');
 app.set('views', __dirname + '/dashboard/templates');
@@ -60,26 +74,28 @@ async function main() {
     // controller.on('open', () => console.log('connection with controller opened'));
     // controller.on('data', data => console.log(data));
 
-    // do this every 1 second
-    // some ghetto debugging
-    setInterval(async () => {
-        if (!botSocket._isConnected) return;
-        let mag = await botSocket.readMag();
-
-        // convert radians to degrees
+    // convert radians to degrees
+    botSocket.on('magData', mag => {
         Object.keys(mag).map(k => mag[k] *= 180 / Math.PI);
         _dashSocket.emit('readMag', mag);
-    }, 1000);
+    });
 
     // set us up some dashboard listeners
     dashboard.on('connection', socket => {
-
-        // TODO prevent multiple connetions from same client
-        socket.on('connectToBot', async () => await botSocket.connect(options));
-        socket.on('disconnectFromBot', async () => await botSocket.disconnect());
+        console.log('the dashboard awakens');
+        socket.on('connectToBot', async () => {
+            await botSocket.connect(options);
+            await botSocket.startMagStream(17);
+        });
+        socket.on('disconnectFromBot', async () => {
+            await botSocket.disconnect();
+        });
 
         // actual socket.io disconnect event from dashboard
-        socket.on('disconnect', () => _dashSocket = undefined);
+        socket.on('disconnect', () => {
+            console.log('dashboard connection closed');
+            _dashSocket = dummySocket.reset()
+        });
         _dashSocket = socket;
     });
 
