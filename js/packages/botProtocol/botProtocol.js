@@ -10,13 +10,13 @@
 const uuidv1 = require('uuid/v1');
 
 // ye olde ghetto JS enum
-// if I wasn't a fucking idiot I'd have started writing this whole project in
 const tokenTypes = {
     RESPONSE: 'response',
     ECHO: 'echo',
     READMAG: 'readMag',
     STARTMAGSTREAM: 'startMagStream',
-    STOPMAGSTREAM: 'stopMagStream'
+    STOPMAGSTREAM: 'stopMagStream',
+    CONTROLLERDATA: 'controllerData'
 };
 const responseTypes = {
     MAGDATA: 'magData'
@@ -44,28 +44,44 @@ class responseToken extends token {
     }
 }
 
-// EVERYTHING ELSE
+// ECHO TOKEN
 class echoToken extends token {
     constructor(body) {
         super(tokenTypes.ECHO, body);
     }
 }
 
+// READ MAG TOKEN
 class readMagToken extends token {
     constructor() {
         super(tokenTypes.READMAG, {});
     }
 }
 
+// START MAG STREAM TOKEN
 class startMagStreamToken extends token {
     constructor(interval) {
         super(tokenTypes.STARTMAGSTREAM, { interval: interval });
     }
 }
 
+// STOP MAG STREAM TOKEN
 class stopMagStreamToken extends token {
     constructor() {
         super(tokenTypes.STOPMAGSTREAM, {});
+    }
+}
+
+// CONTROLLER DATA TOKEN
+/*
+ * {
+ *   axes: []
+ *   buttons: []
+ * }
+ */
+class controllerDataToken extends token {
+    constructor(controllerData) {
+        super(tokenTypes.STOPMAGSTREAM, controllerData);
     }
 }
 
@@ -77,5 +93,6 @@ module.exports = {
     echoToken: echoToken,
     readMagToken: readMagToken,
     startMagStreamToken: startMagStreamToken,
-    stopMagStreamToken: stopMagStreamToken
+    stopMagStreamToken: stopMagStreamToken,
+    controllerDataToken: controllerDataToken
 };

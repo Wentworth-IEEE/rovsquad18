@@ -15,10 +15,8 @@ const botProtocol = require('botprotocol'),
     responseTypes = botProtocol.responseTypes;
 
 // global constants
-/*
- * emitter is used to emit responses from the server with the event
- * type being the transactionID of the response.
- */
+
+// emitter is used to emit responses from the server with the event type being the response's transactionID.
 const emitter = new EventEmitter();
 
 class botSocket extends EventEmitter {
@@ -29,7 +27,7 @@ class botSocket extends EventEmitter {
         // is this the right place to set this up? only time will tell...
         emitter.on(responseTypes.MAGDATA, data => {
             this.emit('magData', data.body);
-        })
+        });
     }
 
     async connect(options) {
@@ -64,8 +62,7 @@ class botSocket extends EventEmitter {
             this._socket.on('data', data => {
                 /*
                  * emit transactionID event with data as callback parameter
-                 * sometimes data comes all mangled up and its SUPER GOOFY
-                 * so we have to
+                 * sometimes data comes in all stuck together so we have to split it up
                  */
                 data.toString().replace(/}{/g, '}|{').split('|').forEach(datum => {
                     datum = JSON.parse(datum);
@@ -99,6 +96,7 @@ class botSocket extends EventEmitter {
         });
     }
 
+    // TODO: document us PLZZZZZZ
     async echo(data) {
         const token = new botProtocol.echoToken(data);
         return await this.sendToken(token);
@@ -119,14 +117,12 @@ class botSocket extends EventEmitter {
         return await this.sendToken(token);
     }
 
-    /**
-     * send an echo token to the robot
-     * resolve with body of response that has the same transactionID
-     * @param token - token to be sent
-     * @returns {Promise}
-     */
+    async sendControllerData(controllerData) {
+        const token = new botProtocol.controllerDataToken(controllerData);
+        return await this.sendToken(token);
+    }
+
     sendToken(token) {
-        console.log('sending token');
         return new Promise(resolve => {
             this._socket.write(token.stringify());
             emitter.once(token.headers.transactionID, data => {

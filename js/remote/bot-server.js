@@ -24,20 +24,17 @@ process.on('message', process.exit);
 /*
  * if -d or --debug is specified as a command line argument
  * run server on 127.0.0.1 (localhost)
- * return all sensor calls with random data
+ * return all sensor calls with dummy data
  */
 const argv = clp(process.argv);
 const debug = argv['d'] || argv['debug'];
 if (debug) console.log('running in debug mode');
 
 // global constants
-// TODO: figure out a more efficient way to get the pi's address
-const piHost = '0.0.0.0';   // this will eventually be the address of the pi we want to host this on
+// TODO: figure out a way to get the pi's address
+const address = debug ? '127.0.0.1' : '0.0.0.0';   // the second clause will eventually be the pi's address
 const port = 8080;
 const emitter = new EventEmitter();
-
-// global constants that rely on ohter things
-const address = debug ? '127.0.0.1' : piHost;
 
 // global not-constants
 let _client;
@@ -85,7 +82,7 @@ function onClientDisconnect() {
     console.log('client disconnected');
     /*
      * TODO:
-     * should this interval be cleared here when the client disconnects from the bot
+     * should this interval be cleared here when the client disconnects
      * or explicitly as a command from the surface when it disconnects or both?
      */
     clearInterval(_magInterval);
@@ -119,14 +116,15 @@ emitter.on(tokenTypes.ECHO, echo);
 emitter.on(tokenTypes.READMAG, readMag);
 emitter.on(tokenTypes.STARTMAGSTREAM, startMagStream);
 emitter.on(tokenTypes.STOPMAGSTREAM, stopMagStream);
+emitter.on(tokenTypes.CONTROLLERDATA, consumeControllerData);
 
 // respond with the same body as the request
 function echo(data) {
     const response = new responseToken(data.body, data.headers.transactionID);
-    _client.write(response.stringify());
+    sendToken(response);
 }
 
-function readMag(data) {
+    function readMag(data) {
     // if we're in debug mode, send back random values from [-pi - pi) radians
     if (debug) {
         const response = new responseToken({
@@ -134,7 +132,7 @@ function readMag(data) {
             pitch: Math.random() * 2 * Math.PI - Math.PI,
             roll: Math.random() * 2 * Math.PI - Math.PI
         }, data.headers.transactionID);
-        _client.write(response.stringify());
+        sendToken(response);
         return;
     }
     // Chris' sensor library call would go here
@@ -160,12 +158,26 @@ function startMagStream(data) {
 
     // respond anyway cuz they all do that
     const response = new responseToken({}, data.headers.transactionID);
-    _client.write(response.stringify());
+    sendToken(response);
 }
 
 function stopMagStream(data) {
     clearInterval(_magInterval);
 
     const response = new responseToken({}, data.headers.transactionID);
-    _client.write(response.stringify());
+    sendToken(response.stringify());
+}
+
+function consumeControllerData(data) {
+    if (debug) {
+        // do nothing if the server is running in debug mode
+        const response = new responseToken({}, data.headers.transactionID);
+        sendToken(response);
+        return;
+    }
+}
+
+function sendToken(token) {
+    console.log('sending it:' + token.stringify());
+    _client.write(token.stringify());
 }

@@ -6,6 +6,7 @@
 const http = require('http');
 
 // package dependancies
+const clp = require('clp');
 const express = require('express');
 const io = require('socket.io');
 
@@ -14,21 +15,27 @@ const Controller = require('controller');
 const BotSocket = require('botsocket');
 
 // global constants
+const argv = clp(process.argv);
+const local = argv['l'] || argv['local'];
+
 // dashboard stuff
 const dashPort = 80;
+
 // botSocket stuff
-const botHost = '127.0.0.1';
-const botPort = 8080;
+const piAddress = local ? '127.0.0.1' : 'spacenugget.local';
+const piPort = 8080;
 const options = {
-    host: botHost,
-    port: botPort
+    host: piAddress,
+    port: piPort
 };
+
 // so that the dashboard doesn't blow up in our face when we leave or try to re-load
 const dummySocket = {
     reset: () => {
         this.notified = false;
         return dummySocket;
     },
+    // overload emit, be annoying if you try to emit to a dashboard that isn't there
     emit: () => {
         if (this.notified)
             return;

@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "botsocket": "file:../packages/botSocket",
+    "clp": "^4.0.10",
     "controller": "file:../packages/controller",
     "express": "^4.16.2",
     "pug": "^2.0.0-rc.4",
