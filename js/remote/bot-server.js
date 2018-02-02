@@ -51,26 +51,30 @@ server.listen({
     exclusive: true
 });
 
+server.on('listening', onServerListening);
+server.on('error', onServerError);
+server.on('connection', onServerConnection);
+
 // listening listener (heh)
-server.on('listening', () => {
+function onServerListening() {
     console.log(`server is listening at ${address}:${port}`);
     process.send('listening');
-});
+}
 
 // error listener
-server.on('error', error => {
+function onServerError(error) {
     console.error(error);
-});
+}
 
 // connection logic
-server.on('connection', client => {
+function onServerConnection(client) {
     console.log('client connected');
     _client = client;
 
     client.on('data', onClientData);
     client.on('close', onClientDisconnect);
     client.on('error', onClientError);
-});
+}
 
 function onClientData(data) {
     console.log(`Hey I got this: ${data}`);
