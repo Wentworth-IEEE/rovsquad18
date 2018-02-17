@@ -2,7 +2,7 @@
  * botProtocol.js
  * contains all the tokens for surface <-> robot communication
  *
- * Bobby Martin
+ * Nugget Industries
  * 2017
  */
 

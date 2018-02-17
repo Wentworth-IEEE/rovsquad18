@@ -1,5 +1,17 @@
-// Bobby Martin
-// 2017
+/**
+ * Nugget Industries
+ * 2017
+ *
+ * COMMAND LINE ARGUMENTS:
+ * -d | --debug:
+ *   runs bot in debug mode
+ * -l | --local:
+ *   runs bot the bot and the surface station in local mode (should be run with debug mode)
+ * --pi-address:
+ *   specify an address
+ * --start-surface:
+ *   starts the surface station too
+ */
 
 /*
  * YE OLDE MONOLITHIC DEPLOYMENT SCRIPT
@@ -15,19 +27,49 @@
 const { fork } = require('child_process');
 
 // package dependencies
-const clp = require('clp');
+const yargs = require('yargs');
 const scp = require('scp2').scp;
 const remoteExec = require('remote-exec');
 
-// global constants
-const argv = clp(process.argv);
-const debug = argv['d'] || argv['debug'];
-const startSurface = argv['s'] || argv['startSurface'];
-const piAddress = clp['piAddress'] || 'spacenugget.local';
+// look for the pi here!
+const defaultPiAddress = 'spacenugget.local';
+
+const args = yargs
+    .usage('Usage: $0 [options]')
+    .version(false)
+    .option('d', {
+        alias: 'debug',
+        desc: 'use fake sensor values instead of real onez',
+        type: 'boolean'
+    })
+    .option('l', {
+        alias: 'local',
+        desc: 'run the robot on localhost and tell the surface to look there too',
+        type: 'boolean',
+    })
+    .option('P', {
+        alias: 'pi-address',
+        desc: 'connect to the robot at this address',
+        type: 'string',
+        default: defaultPiAddress,
+        nargs: 1
+    })
+    .option('S', {
+        alias: 'start-surface',
+        desc: 'start the surface station too! (ya lazy bum)',
+        type: 'boolean'
+    })
+    .option('N', {
+        alias: 'no-run',
+        desc: 'just copy the files, don\'t restart the nugget daemon on the pi',
+        type: 'boolean'
+    })
+    .alias('h', 'help')
+    .argv;
 
 const piPath = '/opt/rov2017';
 
-async function setupRobot(debug) {
+async function setupRobot(args) {
     console.log('Starting robot setup');
 
     /*
@@ -37,67 +79,82 @@ async function setupRobot(debug) {
     ////////////////
     // DEBUG MODE //
     ////////////////
-    if (debug) return new Promise(resolve => {
-        console.log('Setting up robot in debug mode');
-        const botArgs = [
-            '--debug'
-        ];
+    if (args.local) return new Promise(resolve => {
+        const botArgs = ['--local', '--debug'];
+        console.log('Starting robot in local and debug mode');
+
         const forkOptions = {
             execArgv: ['--inspect'],
             stdio: ['pipe', 'pipe', 'pipe', 'ipc']
         };
-        const child = fork(__dirname + '/../../remote/botServer.js', botArgs, forkOptions).on('message', () => {
-            console.log('Finished setting up robot in debug mode');
-            resolve(child)
+        const child = fork(__dirname + '/../../remote/index.js', botArgs, forkOptions).on('message', () => {
+            console.log('Finished setting up robot in local and debug mode');
+            resolve(child);
         });
     });
 
     ////////////////////
     // NOT DEBUG MODE //
     ////////////////////
+    console.log('Copying files to robot');
+    // copy files to robot, resolve when complete
+    const scpOptions = {
+        host: args.piAddress,
+        username: 'root',
+        password: 'spacenugget',
+        path: piPath
+    };
     // COPY
-    await new Promise(resolve => {
-        console.log('Copying files to robot');
-        // copy files to robot, resolve when complete
-        const scpOptions = {
-            host: piAddress,
-            username: 'root',
-            password: 'spacenugget',
-            path: piPath
-        };
-        // COPY
+    await new Promise(resolve =>
         scp(__dirname + '/../../remote', scpOptions, error => {
             if (error) throw error;
             console.log('Finished copying files');
             resolve();
-        });
-    });
+        })
+    );
+
+    // stop if noRun was specified
+    if (args.noRun) return Promise.resolve();
+
+    console.log('Starting server remotely');
+    const remoteExecOptions = {
+        username: 'root',
+        password: 'spacenugget'
+    };
     // RUN
-    await new Promise(resolve => {
-        console.log('Starting server remotely');
-        const remoteExecOptions = {
-            username: 'root',
-            password: 'spacenugget'
-        };
+    if (args.debug) {
+        await new Promise(resolve =>
+            // DO THE THING
+            remoteExec(args.piAddress, 'service nugget debug', remoteExecOptions, error => {
+                if (error) throw error;
+                console.log('Server started in debug mode');
+                resolve();
+            })
+        );
+        return Promise.resolve();
+    }
+    await new Promise(resolve =>
         // DO THE THING
-        remoteExec(piAddress, `service nugget restart`, remoteExecOptions, error => {
+        remoteExec(args.piAddress, 'service nugget restart', remoteExecOptions, error => {
             if (error) throw error;
             console.log('Finished starting server remotely');
             resolve();
         })
-    })
+    );
 }
 
-async function setupSurface() {
+async function setupSurface(args) {
     // give it a start job
-    const surfaceArgs = debug ? [ '--local' ] : [];
-    fork(__dirname + '/../../surface/ROV.js', surfaceArgs);
+    const surfaceArgs = [];
+    if (args.local) surfaceArgs.push('--local');
+    if (args.piAddress) surfaceArgs.push(`--pi-address ${args.piAddress}`);
+    fork(__dirname + '/../../surface', surfaceArgs);
 }
 
 async function main() {
-    await setupRobot(debug);
-    // start the surface station too if it was specified
-    if (startSurface) await setupSurface();
+    await setupRobot(args);
+    // start the surface station too if it's in the args
+    if (args.startSurface) await setupSurface(args);
 }
 
 if (require.main === module)

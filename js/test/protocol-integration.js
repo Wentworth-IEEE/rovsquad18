@@ -1,4 +1,4 @@
-// Bobby Martin
+// Nugget Industries
 // 2017
 
 const { setupRobot } = require('deploy');

@@ -1,8 +1,8 @@
 /**
  * botSocket.js
- * an API for talking to botServer.js
+ * an API for talking to the robot
  *
- * Bobby Martin
+ * Nugget Industries
  * 2017
  */
 

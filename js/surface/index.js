@@ -1,12 +1,13 @@
-
-// Bobby Martin
-// 2017
+/**
+ * Nugget Industries
+ * 2017
+ */
 
 // native dependancies
 const http = require('http');
 
 // package dependancies
-const clp = require('clp');
+const yargs = require('yargs');
 const express = require('express');
 const io = require('socket.io');
 
@@ -14,18 +15,35 @@ const io = require('socket.io');
 const Controller = require('controller');
 const BotSocket = require('botsocket');
 
-// global constants
-const argv = clp(process.argv);
-const local = argv['l'] || argv['local'];
-
-// dashboard stuff
+// socket.io dashboard port
 const dashPort = 80;
 
-// botSocket stuff
-const piAddress = local ? '127.0.0.1' : 'spacenugget.local';
+// TODO: yargs stuff goes here
+const args = yargs
+    .usage('Usage: $0 [options]')
+    .version(false)
+    .option('l', {
+        alias: 'local',
+        desc: 'connect to the robot on localhost',
+        type: 'boolean'
+    })
+    .option('P', {
+        alias: 'pi-address',
+        desc: 'connect to the robot at this address',
+        type: 'string',
+        default: 'spacenugget.local',
+        nargs: 1
+    })
+    .alias('h', 'help')
+    .argv;
+
+// address to look for robot at
+const botAddress = args.local ? '127.0.0.1' : args.piAddress;
+// port to look for robot on
 const piPort = 8080;
+// robot connection options
 const options = {
-    host: piAddress,
+    host: botAddress,
     port: piPort
 };
 
@@ -35,11 +53,11 @@ const dummySocket = {
         this.notified = false;
         return dummySocket;
     },
-    // overload emit, be annoying if you try to emit to a dashboard that isn't there
+    // overload emit, be annoying if you try to send stuff to a dashboard that isn't there
     emit: () => {
         if (this.notified)
             return;
-        console.log('dashboard disconnected WHAT HAVE YOU DONE');
+        console.log('dashboard disconnected WHAT HAVE YOU DONE OPEN IT BACK UP');
         this.notified = true;
     }
 };
@@ -55,6 +73,7 @@ const app = express();
 const server = http.Server(app);
 const dashboard = io(server);
 let _dashSocket = dummySocket;
+
 // express/webserver stuff
 app.set('view engine', 'pug');
 app.set('views', __dirname + '/dashboard/templates');
@@ -78,7 +97,7 @@ async function main() {
 
     // this is commented out for now so we can focus on bot connection stuff
     // await controller.init();
-    // controller.on('open', () => console.log('connection with controller opened'));
+    // controller.on('open', () => console.log('controller connected'));
     // controller.on('data', data => console.log(data));
 
     // convert radians to degrees
@@ -89,11 +108,13 @@ async function main() {
 
     // set us up some dashboard listeners
     dashboard.on('connection', socket => {
+
         console.log('the dashboard awakens');
         socket.on('connectToBot', async () => {
             await botSocket.connect(options);
             await botSocket.startMagStream(17);
         });
+
         socket.on('disconnectFromBot', async () => {
             await botSocket.disconnect();
         });

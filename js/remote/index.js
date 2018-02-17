@@ -1,9 +1,15 @@
 /**
- * botServer.js
+ * Nugget Industries
+ * 2017
+ *
+ * index.js
  * for running on the robot
  *
- * Bobby Martin
- * 2017
+ * COMMAND LINE ARGUMENTS:
+ * -d | --debug:
+ *   runs the script without actually trying to read from sensors, sends made up values instead
+ * -l | --local:
+ *   runs the robot on localhost, should be run with --debug
  */
 
 // native dependencies
@@ -11,7 +17,7 @@ const net = require('net');
 const EventEmitter = require('events');
 
 // package dependancies
-const clp = require('clp');
+const yargs = require('yargs');
 
 // local package dependancies
 const { tokenTypes, responseTypes, responseToken } = require('botprotocol');
@@ -26,13 +32,28 @@ process.on('message', process.exit);
  * run server on 127.0.0.1 (localhost)
  * return all sensor calls with dummy data
  */
-const argv = clp(process.argv);
-const debug = argv['d'] || argv['debug'];
-if (debug) console.log('running in debug mode');
+const args = yargs
+    .usage('Usage: $0 [options]')
+    .version(false)
+    .option('d', {
+        alias: 'debug',
+        desc: 'use fake sensor values instead of real onez',
+        type: 'boolean'
+    })
+    .option('l', {
+        alias: 'local',
+        desc: 'run the server on localhost',
+        type: 'boolean',
+        implies: 'debug'
+    })
+    .alias('h', 'help')
+    .argv;
+
+if (args.debug) console.log('running in debug mode');
 
 // global constants
 // TODO: figure out a way to get the pi's address
-const address = debug ? '127.0.0.1' : '0.0.0.0';   // the second clause will eventually be the pi's address
+const address = args.local ? '127.0.0.1' : '0.0.0.0';
 const port = 8080;
 const emitter = new EventEmitter();
 
@@ -128,9 +149,9 @@ function echo(data) {
     sendToken(response);
 }
 
-    function readMag(data) {
+function readMag(data) {
     // if we're in debug mode, send back random values from [-pi - pi) radians
-    if (debug) {
+    if (args.debug) {
         const response = new responseToken({
             heading: Math.random() * 2 * Math.PI - Math.PI,
             pitch: Math.random() * 2 * Math.PI - Math.PI,
@@ -173,7 +194,7 @@ function stopMagStream(data) {
 }
 
 function consumeControllerData(data) {
-    if (debug) {
+    if (args.debug) {
         // do nothing if the server is running in debug mode
         const response = new responseToken({}, data.headers.transactionID);
         sendToken(response);
@@ -182,6 +203,11 @@ function consumeControllerData(data) {
 }
 
 function sendToken(token) {
-    console.log('sending it:' + token.stringify());
+    /*
+     * WARN-JOB:
+     * uncommenting the console.log line below will make the server crash after a few seconds
+     * if you try deploying using the --local tag
+     */
+    // console.log('sending it:' + token.stringify());
     _client.write(token.stringify());
 }

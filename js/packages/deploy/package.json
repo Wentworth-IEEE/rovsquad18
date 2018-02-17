@@ -6,11 +6,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Bobby Martin",
+  "author": "Nugget Industries",
   "license": "ISC",
   "dependencies": {
-    "clp": "^4.0.8",
     "remote-exec": "0.0.3",
-    "scp2": "^0.5.0"
+    "scp2": "^0.5.0",
+    "yargs": "^11.0.0"
   }
 }
