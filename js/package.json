@@ -1,0 +1,17 @@
+{
+  "name": "surface",
+  "version": "1.0.0",
+  "description": "WIT IEEE Underwater ROV 2018 surface station",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test",
+    "deploy": "node packages/deploy",
+    "bootstrap": "lerna bootstrap"
+  },
+  "author": "Nugget Industries",
+  "license": "ISC",
+  "devDependencies": {
+    "lerna": "^2.5.1",
+    "mocha": "^4.0.1"
+  }
+}
