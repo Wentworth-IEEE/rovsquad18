@@ -1,10 +1,10 @@
 # rovsquad18
-Welcome to the repository for WIT IEEE's 2018 MATE Explorer Class Underwater ROV! 
+Repository for the 2018 ROV project through WIT IEEE
 
 ## How to run
 The following steps will start the robot in debug mode<br>
 ```bash
-cd js
+cd production
 npm install
 npm run bootstrap
 npm run deploy -- --debug --startSurface

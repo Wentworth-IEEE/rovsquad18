@@ -1,0 +1,19 @@
+{
+  "name": "surface",
+  "version": "1.0.0",
+  "description": "WIT IEEE Underwater ROV 2018 prototype surface station",
+  "main": "ROV.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Bobby Martin",
+  "license": "ISC",
+  "dependencies": {
+    "botsocket": "file:../packages/botSocket",
+    "controller": "file:../packages/controller",
+    "express": "^4.16.2",
+    "pug": "^2.0.0-rc.4",
+    "serialport": "^5.0.0",
+    "socket.io": "^2.0.4"
+  }
+}
