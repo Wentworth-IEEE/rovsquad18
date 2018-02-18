@@ -7,7 +7,7 @@ The following steps will start the robot in debug mode<br>
 cd production
 npm install
 npm run bootstrap
-npm run deploy -- --debug --startSurface
+npm run deploy -- --local --startSurface
 ```
 The robot will be listening on `localhost:8080` with dummy sensors, and the dashboard on `localhost:80`
 
