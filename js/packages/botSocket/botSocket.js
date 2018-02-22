@@ -32,15 +32,11 @@ class botSocket extends EventEmitter {
 
     async connect(options) {
         // if we're busy connecting
-        if (this._isConnecting) {
-            console.log('still connecting');
-            return;
-        }
+        if (this._isConnecting) return Promise.reject('Still connecting');
+
         // if the socket is already established resolve and do nothing
-        if (this._isConnected) {
-            console.log('already connected');
-            return;
-        }
+        if (this._isConnected) return Promise.reject('Already connected');
+
         // moderately ghetto semaphore
         this._isConnecting = true;
         await new Promise((resolve, reject) => {
@@ -96,32 +92,73 @@ class botSocket extends EventEmitter {
         });
     }
 
-    // TODO: document us PLZZZZZZ
+    /**
+     * Send some arbitrary data to the robot, expect the same arbitrary data in return
+     *
+     * @async
+     * @param data - The arbitrary data to be echoed
+     * @returns {Promise<*>} Resolves with the response from the robot
+     */
     async echo(data) {
         const token = new botProtocol.echoToken(data);
         return await this.sendToken(token);
     }
 
+    /**
+     * Read the magnetometer values from the robot
+     *
+     * @async
+     * @returns {Promise<*>} Resolves with magnetometer values in the following format:
+     * {
+     *    heading,
+     *    pitch,
+     *    roll
+     * }
+     */
     async readMag() {
         const token = new botProtocol.readMagToken();
         return await this.sendToken(token);
     }
 
+    /**
+     * Tell the robot to start streaming magnetometer data at a certain interval
+     *
+     * @param interval - The interval to stream at (time in ms between data being sent)
+     * @returns {Promise<*>} Resolves when the robot ackgnowledges the request
+     */
     async startMagStream(interval) {
         const token = new botProtocol.startMagStreamToken(interval);
         return await this.sendToken(token);
     }
 
+    /**
+     * Tell the robot to stop streaming magnetometer data
+     *
+     * @returns {Promise<*>} Resolves when the robot ackgnowledges the request
+     */
     async stopMagStream() {
         const token = new botProtocol.stopMagStreamToken();
         return await this.sendToken(token);
     }
 
+    /**
+     * Send controller data to the robot
+     * This one isn't completely implemented yet
+     *
+     * @param controllerData - The controller data
+     * @returns {Promise<*>} Resolves when the robot ackgnowledges and processes the request
+     */
     async sendControllerData(controllerData) {
         const token = new botProtocol.controllerDataToken(controllerData);
         return await this.sendToken(token);
     }
 
+    /**
+     * Send a token and wait for its unique response from the robot
+     *
+     * @param token - the token to be sent
+     * @returns {Promise<*>}
+     */
     sendToken(token) {
         return new Promise(resolve => {
             this._socket.write(token.stringify());
