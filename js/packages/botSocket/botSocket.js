@@ -123,6 +123,7 @@ class botSocket extends EventEmitter {
     /**
      * Tell the robot to start streaming magnetometer data at a certain interval
      *
+     * @async
      * @param interval - The interval to stream at (time in ms between data being sent)
      * @returns {Promise<*>} Resolves when the robot ackgnowledges the request
      */
@@ -134,6 +135,7 @@ class botSocket extends EventEmitter {
     /**
      * Tell the robot to stop streaming magnetometer data
      *
+     * @async
      * @returns {Promise<*>} Resolves when the robot ackgnowledges the request
      */
     async stopMagStream() {
@@ -145,6 +147,7 @@ class botSocket extends EventEmitter {
      * Send controller data to the robot
      * This one isn't completely implemented yet
      *
+     * @async
      * @param controllerData - The controller data
      * @returns {Promise<*>} Resolves when the robot ackgnowledges and processes the request
      */
