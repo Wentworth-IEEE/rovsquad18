@@ -12,31 +12,30 @@
  *
  */
 
-// Get dependencies, initialize stuff
-var sleep = require('sleep');
-/*
-	// If the defaults ever need to get changed, uncomment this
-	// and comment out 'var makePwm = require('adafruit-pca9685');'
-	// Note that the contents of this object are the defaults
+// Should cycle a thruster on and off.
 
-var makePwm =  {
-    "freq": "50",				// frequency of the device
-    "correctionFactor": "1.0",	// correction factor - fine tune the frequency
-    "address": "0x40",			// i2c bus address
-    "device": '/dev/i2c-1',		// device name
-    "debug": <null>				// adds some debugging methods if set
+var i2cBus = require("i2c-bus");
+var Pca9685Driver = require("pca9685").Pca9685Driver;
+
+var options = {
+     i2c: i2cBus.openSync(1),
+     address: 0x40,
+     frequency: 50,
+     debug: false
+};
+
+// Loops through turning on and off
+while(true) {
+    var on = setInterval(on(), 1000);
+    var off = setInterval(off(), 1000);
 }
 
-*/
-var makePwm = require('adafruit-pca9685');
-var pwm = makePwm();
+// Sets the PWM to a duty cycle of 90%
+function on() {
+    pwm.setDutyCycle(1, .9);
+}
 
-// Tell PCA to do the things, print to console
-while(true) {
-	console.log('Setting PWM on channel 1 to 255!');
-	pwm.setPulse(1, 255);
-	sleep.sleep(5);
-	console.log('Setting PWM on channel 1 to 0!');
-	pwm.setPulse(1, 0);
-	sleep.sleep(5);
+// Sets the PWM to a duty cycle of 0%
+function off() {
+    pwm.setDutyCycle(1, 0);
 }
