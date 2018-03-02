@@ -14,10 +14,10 @@
 
 // Should cycle a thruster on and off.
 
-var i2cBus = require("i2c-bus");
-var Pca9685Driver = require("pca9685").Pca9685Driver;
+let i2cBus = require("i2c-bus");
+let Pca9685Driver = require("pca9685").Pca9685Driver;
 
-var options = {
+const options = {
      i2c: i2cBus.openSync(1),
      address: 0x40,
      frequency: 50,
@@ -25,14 +25,28 @@ var options = {
 };
 
 // Loops through turning on and off
-while(true) {
-    var on = setInterval(on(), 1000);
-    var off = setInterval(off(), 1000);
+function main() {
+    let pwm_on = false;
+    let milliseconds = new Date().getTime();
+    while(true) {
+        if(new Date().getTime() < (milliseconds+100)){
+            if(pwm_on) {
+                pwm.setDutyCycle(1, .9);
+                pwm_on = true;
+                milliseconds = new Date().getTime();
+            } else {
+                pwm.setDutyCycle(1, 0);
+                pwm_on = false;
+                milliseconds = new Date().getTime();
+            }
+        } 
+    }
 }
 
 // Sets the PWM to a duty cycle of 90%
 function on() {
     pwm.setDutyCycle(1, .9);
+
 }
 
 // Sets the PWM to a duty cycle of 0%
