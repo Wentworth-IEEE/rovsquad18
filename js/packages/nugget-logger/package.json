@@ -1,0 +1,14 @@
+{
+  "name": "nugget-logger",
+  "version": "1.0.0",
+  "description": "logger for 2018 WIT Rovsquad",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Nuggget Industries",
+  "license": "ISC",
+  "dependencies": {
+    "winston": "^3.0.0-rc1"
+  }
+}
