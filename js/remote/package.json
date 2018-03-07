@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "botprotocol": "file:../packages/botProtocol",
+    "nugget-logger": "file:../packages/nugget-logger",
     "yargs": "^11.0.0"
   }
 }
