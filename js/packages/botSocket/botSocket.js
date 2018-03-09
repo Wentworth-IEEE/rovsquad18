@@ -11,12 +11,12 @@ const net = require('net');
 const EventEmitter = require('events');
 
 // local package dependancies
+const logger = require('nugget-logger');
 const botProtocol = require('botprotocol'),
     responseTypes = botProtocol.responseTypes;
 
-// global constants
 
-// emitter is used to emit responses from the server with the event type being the response's transactionID.
+// emitter is used to emit responses from the robot with the event type being the response's transactionID.
 const emitter = new EventEmitter();
 
 class botSocket extends EventEmitter {
@@ -33,28 +33,28 @@ class botSocket extends EventEmitter {
     async connect(options) {
         // if we're busy connecting
         if (this._isConnecting) {
-            console.log('still connecting');
+            logger.w('connection', 'still connecting');
             return;
         }
         // if the socket is already established resolve and do nothing
         if (this._isConnected) {
-            console.log('already connected');
+            logger.w('connection', 'already connected');
             return;
         }
         // moderately ghetto semaphore
         this._isConnecting = true;
         await new Promise((resolve, reject) => {
-            console.log(`connecting to bot at ${options.host}:${options.port}`);
+            logger.i('connection', `connecting to bot at ${options.host}:${options.port}`);
 
             // combination connection creation and connection listener :dab:
             this._socket = net.createConnection(options, () => {
-                console.log('connected');
+                logger.i('connection', 'connected');
                 resolve();
             });
 
             // let ya boy know when there's an error
             this._socket.on('error', error => {
-                console.error(error);
+                logger.e('connection error', error);
                 reject(error);
             });
 
@@ -71,29 +71,29 @@ class botSocket extends EventEmitter {
             });
 
             // do this once per instance of this._socket on 'close'
-            this._socket.on('close', hadError => {
-                if (hadError) console.log('disconnected with error');
-                else console.log('disconnected');
-                this._isConnected = false;
-                delete this._socket;
-            });
-        }).catch(error => console.error(error));
+            this._socket.on('close', this.onClose);
+        }).catch(error => logger.e('disconnection error', error));
+
         this._isConnecting = false;
         this._isConnected = true;
     }
 
-    disconnect() {
-        return new Promise(resolve => {
-            // do nothing if we're not connected to anything
-            if (!this._isConnected) {
-                console.log('You\'re not even connected to anything');
-                return resolve();
-            }
-            this._socket.end();
-            this._socket.on('close', hadError => {
-                resolve(hadError);
-            });
-        });
+    async disconnect() {
+        if (!this._isConnected) {
+            logger.w('disconnection', 'You\'re not even connected to anything');
+            return;
+        }
+        this._socket.end();
+        this._socket.on('close', this.onClose);
+    }
+
+    onClose(hadError) {
+        if (hadError)
+            logger.w('disconnection error', 'disconnected with error');
+
+        else logger.i('disconnection', 'disconnected');
+        this._isConnected = false;
+        delete this._socket;
     }
 
     // TODO: document us PLZZZZZZ

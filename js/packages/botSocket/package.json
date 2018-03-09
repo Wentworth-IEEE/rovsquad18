@@ -9,6 +9,7 @@
   "author": "Nugget Industries",
   "license": "ISC",
   "dependencies": {
-    "botprotocol": "file:../botProtocol"
+    "botprotocol": "file:../botProtocol",
+    "nugget-logger": "file:../nugget-logger"
   }
 }
