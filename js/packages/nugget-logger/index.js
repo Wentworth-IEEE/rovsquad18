@@ -1,13 +1,18 @@
 const winston = require('winston');
 const { combine, timestamp, printf } = winston.format;
 
+const logFileLocation = process.arch.indexOf('arm') > -1
+    ? `/var/log/nugget.log`
+    : `./surface.log`;
+
 const logger = winston.createLogger({
     format: combine(
         timestamp(),
         printf(info => `${info.timestamp} ${info.level.toUpperCase()} [${info.label}] ${info.message}`)
     ),
     transports: [
-        new winston.transports.Console()
+        new winston.transports.Console(),
+        new winston.transports.File({ filename: logFileLocation })
     ]
 });
 
