@@ -1,6 +1,6 @@
 // TODO: write a better header lol
 // WIT ROV RPI control script
-// Bobby Martin && Nate Dube
+// Bobby Martin & Nate Dube
 // 2016
 
 // Native Dependencies
