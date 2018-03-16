@@ -9,7 +9,7 @@
   "author": "Nugget Industries",
   "license": "ISC",
   "dependencies": {
-    "botprotocol": "file:../packages/botProtocol",
+    "botprotocol": "file:../botProtocol",
     "yargs": "^11.0.0"
   }
 }
