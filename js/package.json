@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha test",
+    "bootstrap": "lerna bootstrap",
     "deploy": "node packages/deploy",
-    "bootstrap": "lerna bootstrap"
+    "surface": "node packages/surface"
   },
   "author": "Nugget Industries",
   "license": "ISC",

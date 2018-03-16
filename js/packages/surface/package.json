@@ -9,8 +9,8 @@
   "author": "Nugget Industries",
   "license": "ISC",
   "dependencies": {
-    "botsocket": "file:../packages/botSocket",
-    "controller": "file:../packages/controller",
+    "botsocket": "file:../botSocket",
+    "controller": "file:../controller",
     "express": "^4.16.2",
     "pug": "^2.0.0-rc.4",
     "serialport": "^5.0.0",

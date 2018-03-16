@@ -2,8 +2,6 @@
   "lerna": "2.5.1",
   "packages": [
     "packages/*",
-    "remote",
-    "surface",
     "test"
   ],
   "version": "0.0.0"
