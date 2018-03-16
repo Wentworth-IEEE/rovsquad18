@@ -121,7 +121,7 @@ class botSocket extends EventEmitter {
     }
 
     /**
-     * Tell the robot to start streaming magnetometer data at a certain interval
+     * Tell the robot to start streaming magnetometer data at a certain frequency
      *
      * @async
      * @param interval - The interval to stream at (time in ms between data being sent)
