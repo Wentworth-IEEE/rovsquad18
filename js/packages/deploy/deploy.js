@@ -123,7 +123,8 @@ async function setupRobot(args) {
     console.log('Starting server remotely');
     const remoteExecOptions = {
         username: 'root',
-        password: 'spacenugget'
+        password: 'spacenugget',
+        readyTimeout: 99000
     };
     // RUN
     if (args.debug) {
