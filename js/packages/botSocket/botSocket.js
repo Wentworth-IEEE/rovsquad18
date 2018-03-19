@@ -70,28 +70,28 @@ class botSocket extends EventEmitter {
                 })
             });
 
-            // do this once per instance of this._socket on 'close'
-            this._socket.on('close', this.onClose);
+            // // do this once per instance of this._socket on 'close'
+            // this._socket.on('close', this.onClose);
         }).catch(error => logger.e('disconnection error', error));
 
         this._isConnecting = false;
         this._isConnected = true;
     }
 
-    async disconnect() {
+    disconnect() {
+        console.log(this._socket === undefined);
         if (!this._isConnected) {
             logger.w('disconnection', 'You\'re not even connected to anything');
             return;
         }
-        this._socket.end();
         this._socket.on('close', this.onClose);
+        this._socket.end();
     }
 
     onClose(hadError) {
-        if (hadError)
-            logger.w('disconnection error', 'disconnected with error');
-
+        if (hadError) logger.w('disconnection error', 'disconnected with error');
         else logger.i('disconnection', 'disconnected');
+
         this._isConnected = false;
         delete this._socket;
     }
