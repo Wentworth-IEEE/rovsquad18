@@ -3,7 +3,9 @@ const { combine, timestamp, printf } = winston.format;
 
 const logFileLocation = process.arch.indexOf('arm') > -1
     ? `/var/log/nugget.log`
-    : `./surface.log`;
+    : `./${process.mainModule.filename.replace(/\\/g, '/').split('/').slice(-2)[0]}.log`;
+
+console.log(`LOGFILE IS AT ${logFileLocation}`);
 
 const logger = winston.createLogger({
     format: combine(
