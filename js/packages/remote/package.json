@@ -1,8 +1,8 @@
 {
-  "name": "botsocket",
+  "name": "remote",
   "version": "1.0.0",
-  "description": "API for talking to the bot",
-  "main": "botSocket.js",
+  "description": "for the bot",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "botprotocol": "file:../botProtocol",
-    "nugget-logger": "file:../nugget-logger"
+    "nugget-logger": "file:../nugget-logger",
+    "yargs": "^11.0.0"
   }
 }

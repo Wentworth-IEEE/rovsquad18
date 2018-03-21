@@ -3,22 +3,21 @@
  * 2017
  */
 
-// native dependancies
+// dependancies
 const http = require('http');
-
-// package dependancies
 const yargs = require('yargs');
 const express = require('express');
 const io = require('socket.io');
-
-// local dependancies
+const nugLog = require('nugget-logger');
 const Controller = require('controller');
 const BotSocket = require('botsocket');
+
+// set up logger
+const logger = new nugLog('info', 'surface.log');
 
 // socket.io dashboard port
 const dashPort = 80;
 
-// TODO: yargs stuff goes here
 const args = yargs
     .usage('Usage: $0 [options]')
     .version(false)
@@ -57,7 +56,7 @@ const dummySocket = {
     emit: () => {
         if (this.notified)
             return;
-        console.log('dashboard disconnected WHAT HAVE YOU DONE OPEN IT BACK UP');
+        logger.w('dashboard', 'dashboard disconnected WHAT HAVE YOU DONE OPEN IT BACK UP');
         this.notified = true;
     }
 };
@@ -84,7 +83,7 @@ app.locals.pretty = true;
 app.get('/', (request, response) => response.render('index'));
 
 // http server shit
-server.listen(dashPort, () => console.log(`dashboard running on localhost:${dashPort}`));
+server.listen(dashPort, () => logger.i('dashboard', `dashboard running on localhost:${dashPort}`));
 
 /*
  * 1. controller
@@ -109,7 +108,7 @@ async function main() {
     // set us up some dashboard listeners
     dashboard.on('connection', socket => {
 
-        console.log('the dashboard awakens');
+        logger.i('dashboard', 'the dashboard awakens');
         socket.on('connectToBot', async () => {
             await botSocket.connect(options);
             await botSocket.startMagStream(17);
@@ -121,7 +120,7 @@ async function main() {
 
         // actual socket.io disconnect event from dashboard
         socket.on('disconnect', () => {
-            console.log('dashboard connection closed');
+            logger.i('dashboard', 'dashboard connection closed');
             _dashSocket = dummySocket.reset()
         });
         _dashSocket = socket;

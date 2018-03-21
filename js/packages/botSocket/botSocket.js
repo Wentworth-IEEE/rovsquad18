@@ -6,17 +6,16 @@
  * 2017
  */
 
-// native depensancies
+// depensancies
 const net = require('net');
 const EventEmitter = require('events');
+const nugLog = require('nugget-logger');
+const botProtocol = require('botprotocol'), responseTypes = botProtocol.responseTypes;
 
-// local package dependancies
-const botProtocol = require('botprotocol'),
-    responseTypes = botProtocol.responseTypes;
+// set up logger
+const logger = new nugLog('info', 'botSocket.log');
 
-// global constants
-
-// emitter is used to emit responses from the server with the event type being the response's transactionID.
+// emitter is used to emit responses from the robot with the event type being the response's transactionID.
 const emitter = new EventEmitter();
 
 class botSocket extends EventEmitter {
@@ -32,59 +31,70 @@ class botSocket extends EventEmitter {
 
     async connect(options) {
         // if we're busy connecting
-        if (this._isConnecting) return Promise.reject('Still connecting');
-
+        if (this._isConnecting) {
+            logger.w('connection', 'still connecting');
+            return;
+        }
         // if the socket is already established resolve and do nothing
-        if (this._isConnected) return Promise.reject('Already connected');
-
+        if (this._isConnected) {
+            logger.w('connection', 'already connected');
+            return;
+        }
         // moderately ghetto semaphore
         this._isConnecting = true;
         await new Promise((resolve, reject) => {
-            console.log(`connecting to bot at ${options.host}:${options.port}`);
+            logger.i('connection', `connecting to bot at ${options.host}:${options.port}`);
 
             // combination connection creation and connection listener :dab:
-            this._socket = net.createConnection(options, () => {
-                console.log('connected');
+            const socket = net.createConnection(options, () => {
+                logger.i('connection', 'connected');
+                this._isConnecting = false;
+                this._isConnected = true;
                 resolve();
             });
-
-            // let ya boy know when there's an error
-            this._socket.on('error', error => {
-                console.error(error);
+            socket.on('error', error => {
+                logger.e('connection error', error);
                 reject(error);
             });
 
-            // DATA TIME
-            this._socket.on('data', data => {
-                /*
-                 * emit transactionID event with data as callback parameter
-                 * sometimes data comes in all stuck together so we have to split it up
-                 */
-                data.toString().replace(/}{/g, '}|{').split('|').forEach(datum => {
-                    datum = JSON.parse(datum);
-                    emitter.emit(datum.headers.transactionID, datum);
-                })
-            });
+            socket.on('data', this._onData);
+            socket.on('close', this._onClose.bind(this));
 
-            // do this once per instance of this._socket on 'close'
-            this._socket.on('close', hadError => {
-                if (hadError) console.log('disconnected with error');
-                else console.log('disconnected');
-                this._isConnected = false;
-                delete this._socket;
-            });
-        }).catch(error => console.error(error));
-        this._isConnecting = false;
-        this._isConnected = true;
+            this._socket = socket;
+
+        }).catch(error =>
+            logger.e('disconnection error', error)
+        );
+    }
+
+    _onData(data) {
+        /*
+         * emit transactionID event with data as callback parameter
+         * sometimes data comes in all stuck together so we have to split it up
+         */
+        data.toString().replace(/}{/g, '}|{').split('|').forEach(datum => {
+            datum = JSON.parse(datum);
+            emitter.emit(datum.headers.transactionID, datum);
+        })
+    }
+
+    _onClose(hadError) {
+        if (hadError)
+            logger.w('disconnection', 'disconnected with error');
+        else
+            logger.i('disconnection', 'disconnected');
+
+        this._isConnected = false;
+        delete this._socket;
     }
 
     disconnect() {
+        // do nothing if we're not connected to anything
+        if (!this._isConnected) {
+            logger.w('disconnection', 'You\'re not even connected to anything');
+            return Promise.resolve();
+        }
         return new Promise(resolve => {
-            // do nothing if we're not connected to anything
-            if (!this._isConnected) {
-                console.log('You\'re not even connected to anything');
-                return resolve();
-            }
             this._socket.end();
             this._socket.on('close', hadError => {
                 resolve(hadError);

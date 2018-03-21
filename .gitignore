@@ -62,3 +62,6 @@ typings/
 
 # FUCK .IDEA
 .idea
+
+# AND PACKAGE-LOCK
+package-lock.json

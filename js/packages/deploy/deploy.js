@@ -28,7 +28,7 @@ const { fork } = require('child_process');
 
 // package dependencies
 const yargs = require('yargs');
-const scp = require('scp2').scp;
+const { scp } = require('scp2');
 const remoteExec = require('remote-exec');
 
 // look for the pi here!
@@ -69,6 +69,10 @@ const args = yargs
 
 const piPath = '/opt/rov2017';
 
+// HERE'S WHERE ALL OUR FILES DO
+const remotePackageLocation = '/../remote';
+const surfacePackageLocation = '/../surface';
+
 async function setupRobot(args) {
     console.log('Starting robot setup');
 
@@ -87,7 +91,7 @@ async function setupRobot(args) {
             execArgv: ['--inspect'],
             stdio: ['pipe', 'pipe', 'pipe', 'ipc']
         };
-        const child = fork(__dirname + '/../../remote/index.js', botArgs, forkOptions).on('message', () => {
+        const child = fork(__dirname + remotePackageLocation, botArgs, forkOptions).on('message', () => {
             console.log('Finished setting up robot in local and debug mode');
             resolve(child);
         });
@@ -102,11 +106,12 @@ async function setupRobot(args) {
         host: args.piAddress,
         username: 'root',
         password: 'spacenugget',
-        path: piPath
+        path: piPath,
+        readyTimeout: 99000
     };
     // COPY
     await new Promise(resolve =>
-        scp(__dirname + '/../../remote', scpOptions, error => {
+        scp(__dirname + remotePackageLocation, scpOptions, error => {
             if (error) throw error;
             console.log('Finished copying files');
             resolve();
@@ -119,7 +124,8 @@ async function setupRobot(args) {
     console.log('Starting server remotely');
     const remoteExecOptions = {
         username: 'root',
-        password: 'spacenugget'
+        password: 'spacenugget',
+        readyTimeout: 99000
     };
     // RUN
     if (args.debug) {
@@ -148,7 +154,7 @@ async function setupSurface(args) {
     const surfaceArgs = [];
     if (args.local) surfaceArgs.push('--local');
     if (args.piAddress) surfaceArgs.push(`--pi-address ${args.piAddress}`);
-    fork(__dirname + '/../../surface', surfaceArgs);
+    fork(__dirname + surfacePackageLocation, surfaceArgs);
 }
 
 async function main() {

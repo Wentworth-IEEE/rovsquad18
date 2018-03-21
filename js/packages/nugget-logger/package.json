@@ -1,15 +1,14 @@
 {
-  "name": "remote",
+  "name": "nugget-logger",
   "version": "1.0.0",
-  "description": "for the bot",
+  "description": "logger for 2018 WIT Rovsquad",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Nugget Industries",
+  "author": "Nuggget Industries",
   "license": "ISC",
   "dependencies": {
-    "botprotocol": "file:../packages/botProtocol",
-    "yargs": "^11.0.0"
+    "winstond": "0.0.2"
   }
 }

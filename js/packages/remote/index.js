@@ -12,15 +12,15 @@
  *   runs the robot on localhost, should be run with --debug
  */
 
-// native dependencies
+// dependencies
 const net = require('net');
 const EventEmitter = require('events');
-
-// package dependancies
 const yargs = require('yargs');
-
-// local package dependancies
+const nugLog = require('nugget-logger');
 const { tokenTypes, responseTypes, responseToken } = require('botprotocol');
+
+// set up logger
+const logger = new nugLog('info', 'remote.log');
 
 // make process.send do nothing if botServer was not spawned as a child process
 process.send = process.send || function() {};
@@ -49,10 +49,9 @@ const args = yargs
     .alias('h', 'help')
     .argv;
 
-if (args.debug) console.log('running in debug mode');
+if (args.debug) logger.i('startup', 'running in debug mode');
 
 // global constants
-// TODO: figure out a way to get the pi's address
 const address = args.local ? '127.0.0.1' : '0.0.0.0';
 const port = 8080;
 const emitter = new EventEmitter();
@@ -78,18 +77,18 @@ server.on('connection', onServerConnection);
 
 // listening listener (heh)
 function onServerListening() {
-    console.log(`server is listening at ${address}:${port}`);
+    logger.i('listening', `server is listening at ${address}:${port}`);
     process.send('listening');
 }
 
 // error listener
 function onServerError(error) {
-    console.error(error);
+    logger.e('server error', error);
 }
 
 // connection logic
 function onServerConnection(client) {
-    console.log('client connected');
+    logger.i('connection', 'client connected');
     _client = client;
 
     client.on('data', onClientData);
@@ -98,13 +97,13 @@ function onServerConnection(client) {
 }
 
 function onClientData(data) {
-    console.log(`Hey I got this: ${data}`);
+    logger.v('message', `Hey I got this: ${data}`);
     data = JSON.parse(data);
     emitter.emit(data.type, data);
 }
 
 function onClientDisconnect() {
-    console.log('client disconnected');
+    logger.i('connection', 'client disconnected');
     /*
      * TODO:
      * should this interval be cleared here when the client disconnects
@@ -115,7 +114,7 @@ function onClientDisconnect() {
 }
 
 function onClientError(error) {
-    console.error(error);
+    logger.e('client error', error);
 }
 
 /*
@@ -166,8 +165,8 @@ function readMag(data) {
 function startMagStream(data) {
     clearInterval(_magInterval);
     /*
-     * dummyToken is used as a fake token to pass to the readMag function.
-     * since readMag only ever looks at the token's transactionID, we can
+     * DummyToken is used as a fake token to pass to the readMag function.
+     * Since readMag only ever looks at the token's transactionID, we can
      * trick it into sending a response token with the a pre-determined
      * transactionID. The surface station will then emit an event of that
      * pre-determined type, and we can handle that event knowing that it's
@@ -203,11 +202,8 @@ function consumeControllerData(data) {
 }
 
 function sendToken(token) {
-    /*
-     * WARN-JOB:
-     * uncommenting the console.log line below will make the server crash after a few seconds
-     * if you try deploying using the --local tag
-     */
-    // console.log('sending it:' + token.stringify());
+    // be careful with verbose logging in local mode
+    // this can crash the script if too much is being logged
+    logger.v('message', 'sending it :' + token.stringify());
     _client.write(token.stringify());
 }
