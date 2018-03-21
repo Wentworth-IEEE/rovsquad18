@@ -3,18 +3,17 @@
  * 2017
  */
 
-// native dependancies
+// dependancies
 const http = require('http');
-
-// package dependancies
 const yargs = require('yargs');
 const express = require('express');
 const io = require('socket.io');
-
-// local dependancies
-const logger = new require('nugget-logger')('info');
+const nugLog = require('nugget-logger');
 const Controller = require('controller');
 const BotSocket = require('botsocket');
+
+// set up logger
+const logger = new nugLog('info', 'surface.log');
 
 // socket.io dashboard port
 const dashPort = 80;

@@ -6,15 +6,14 @@
  * 2017
  */
 
-// native depensancies
+// depensancies
 const net = require('net');
 const EventEmitter = require('events');
+const nugLog = require('nugget-logger');
+const botProtocol = require('botprotocol'), responseTypes = botProtocol.responseTypes;
 
-// local package dependancies
-const logger = new require('nugget-logger')('info');
-const botProtocol = require('botprotocol'),
-    responseTypes = botProtocol.responseTypes;
-
+// set up logger
+const logger = new nugLog('info', 'botSocket.log');
 
 // emitter is used to emit responses from the robot with the event type being the response's transactionID.
 const emitter = new EventEmitter();

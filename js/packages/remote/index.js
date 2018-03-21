@@ -12,7 +12,7 @@
  *   runs the robot on localhost, should be run with --debug
  */
 
-// native dependencies
+// dependencies
 const net = require('net');
 const EventEmitter = require('events');
 const yargs = require('yargs');
