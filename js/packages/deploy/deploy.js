@@ -106,7 +106,8 @@ async function setupRobot(args) {
         host: args.piAddress,
         username: 'root',
         password: 'spacenugget',
-        path: piPath
+        path: piPath,
+        readyTimeout: 99000
     };
     // COPY
     await new Promise(resolve =>
