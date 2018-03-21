@@ -9,6 +9,6 @@
   "author": "Nuggget Industries",
   "license": "ISC",
   "dependencies": {
-    "winston": "^3.0.0-rc1"
+    "winstond": "0.0.2"
   }
 }

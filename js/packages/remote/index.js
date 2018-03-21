@@ -15,13 +15,12 @@
 // native dependencies
 const net = require('net');
 const EventEmitter = require('events');
-
-// package dependancies
 const yargs = require('yargs');
-
-// local package dependancies
-const logger = require('nugget-logger');
+const nugLog = require('nugget-logger');
 const { tokenTypes, responseTypes, responseToken } = require('botprotocol');
+
+// set up logger
+const logger = new nugLog('info', 'remote.log');
 
 // make process.send do nothing if botServer was not spawned as a child process
 process.send = process.send || function() {};

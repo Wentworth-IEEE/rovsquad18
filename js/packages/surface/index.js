@@ -12,7 +12,7 @@ const express = require('express');
 const io = require('socket.io');
 
 // local dependancies
-const logger = require('nugget-logger');
+const logger = new require('nugget-logger')('info');
 const Controller = require('controller');
 const BotSocket = require('botsocket');
 

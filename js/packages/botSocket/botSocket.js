@@ -11,7 +11,7 @@ const net = require('net');
 const EventEmitter = require('events');
 
 // local package dependancies
-const logger = require('nugget-logger');
+const logger = new require('nugget-logger')('info');
 const botProtocol = require('botprotocol'),
     responseTypes = botProtocol.responseTypes;
 

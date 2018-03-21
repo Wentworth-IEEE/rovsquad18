@@ -1,32 +1,54 @@
-const winston = require('winston');
-const { combine, timestamp, printf } = winston.format;
+const fs = require('fs');
 
-const logFileLocation = process.arch.indexOf('arm') > -1
-    ? `/var/log/nugget.log`
-    : `./${process.mainModule.filename.replace(/\\/g, '/').split('/').slice(-2)[0]}.log`;
+const levels = [
+    'ERROR',
+    'WARN',
+    'INFO',
+    'VERBOSE',
+    'DEBUG',
+    'SILLY'
+];
 
-console.log(`LOGFILE IS AT ${logFileLocation}`);
+class logger {
 
-const logger = winston.createLogger({
-    format: combine(
-        timestamp(),
-        printf(info => `${info.timestamp} ${info.level.toUpperCase()} [${info.label}] ${info.message}`)
-    ),
-    transports: [
-        new winston.transports.Console(),
-        new winston.transports.File({ filename: logFileLocation })
-    ]
-});
+    /**
+     * @param level - name (not index) of the level for this logger to be
+     * @param logFilePath - file name/path for file to write logs to
+     */
+    constructor(level, logFilePath = '') {
+        // make sure the level is between 0 and 5
+        level = levels.indexOf(level.toUpperCase());
+        if (level < 0 || level > levels.length - 1)
+            throw 'level must be between 0 and 5 inclusice';
 
-/*
- * these are so we can log stuff with a label in the function call
- * inspired by Android's Logcat
- */
-logger.e = (label, message) => logger.error(message, { label: label });
-logger.w = (label, message) => logger.warn(message, { label: label });
-logger.i = (label, message) => logger.info(message, { label: label });
-logger.v = (label, message) => logger.verbose(message, { label: label });
-logger.d = (label, message) => logger.debug(message, { label: label });
-logger.s = (label, message) => logger.silly(message, { label: label });
+        // this.level is set to a number instead of the actual name of the level
+        // the number is the index of the level name in `levels`
+        this.level = level;
+
+        this.logFile = logFilePath
+            ? fs.createWriteStream(logFilePath, { flags: 'a' })
+            : this.logFile = {
+                write: () => {}
+            };
+    }
+
+    print(label, message, level) {
+        // don't log anything above the level we specified in the constructor
+        if (level > this.level)
+            return;
+
+        const logMessage = `${new Date().toISOString()} ${levels[level]} [${label}] ${message}`;
+        console.log(logMessage);
+        this.logFile.write(logMessage + '\n');
+    }
+
+    e(label, message) { this.print(label, message, 0) };
+    w(label, message) { this.print(label, message, 1) };
+    i(label, message) { this.print(label, message, 2) };
+    v(label, message) { this.print(label, message, 3) };
+    d(label, message) { this.print(label, message, 4) };
+    s(label, message) { this.print(label, message, 5) };
+
+}
 
 module.exports = logger;
