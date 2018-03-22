@@ -6,7 +6,7 @@
  * 2017
  */
 
-// depensancies
+// dependencies
 const net = require('net');
 const EventEmitter = require('events');
 const nugLog = require('nugget-logger');
