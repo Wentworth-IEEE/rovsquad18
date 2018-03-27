@@ -64,6 +64,7 @@ const args = yargs
         desc: 'just copy the files, don\'t restart the nugget daemon on the pi',
         type: 'boolean'
     })
+
     .alias('h', 'help')
     .argv;
 
@@ -76,78 +77,59 @@ const surfacePackageLocation = '/../surface';
 async function setupRobot(args) {
     console.log('Starting robot setup');
 
-    /*
-     * if we're in debug mode, spawn botServer in debug mode
-     * resolve when the server sends an IPC message
-     */
-    ////////////////
-    // DEBUG MODE //
-    ////////////////
-    if (args.local) return new Promise(resolve => {
-        const botArgs = ['--local', '--debug'];
-        console.log('Starting robot in local and debug mode');
+    if (args.local) return spawnRobotLocalDebug;
 
-        const forkOptions = {
-            execArgv: ['--inspect'],
-            stdio: ['pipe', 'pipe', 'pipe', 'ipc']
-        };
-        const child = fork(__dirname + remotePackageLocation, botArgs, forkOptions).on('message', () => {
-            console.log('Finished setting up robot in local and debug mode');
-            resolve(child);
-        });
+    await copyFilesToRobot(args);
+
+    if (args.noRun) return Promise.resolve();
+
+    return restartRobot(args);
+}
+
+const spawnRobotLocalDebug = new Promise(resolve => {
+    // spawn the robot as a child process, resolve when the robot is done setting up.
+    const botArgs = ['--local', '--debug'];
+    console.log('Starting robot in local and debug mode');
+
+    const forkOptions = {
+        execArgv: ['--inspect'],
+        stdio: ['pipe', 'pipe', 'pipe', 'ipc']
+    };
+    const child = fork(__dirname + remotePackageLocation, botArgs, forkOptions).on('message', () => {
+        console.log('Finished setting up robot in local and debug mode');
+        resolve(child);
     });
+});
 
-    ////////////////////
-    // NOT DEBUG MODE //
-    ////////////////////
-    console.log('Copying files to robot');
+const copyFilesToRobot = args => new Promise(resolve => {
     // copy files to robot, resolve when complete
-    const scpOptions = {
+    console.log('Copying files to robot');
+    scp(__dirname + remotePackageLocation, {
         host: args.piAddress,
         username: 'root',
         password: 'spacenugget',
         path: piPath,
         readyTimeout: 99000
-    };
-    // COPY
-    await new Promise(resolve =>
-        scp(__dirname + remotePackageLocation, scpOptions, error => {
-            if (error) throw error;
-            console.log('Finished copying files');
-            resolve();
-        })
-    );
+    }, error => {
+        if (error) throw error;
+        console.log('Finished copying files');
+        resolve();
+    })
+});
 
-    // stop if noRun was specified
-    if (args.noRun) return Promise.resolve();
-
-    console.log('Starting server remotely');
-    const remoteExecOptions = {
+const restartRobot = args => new Promise(resolve => {
+    // restart nugget daemon, resolve when complete
+    console.log('Restarting server remotely');
+    remoteExec(args.piAddress, `service nugget ${args.debug ? 'debug' : 'restart'}`, {
         username: 'root',
         password: 'spacenugget',
         readyTimeout: 99000
-    };
-    // RUN
-    if (args.debug) {
-        await new Promise(resolve =>
-            // DO THE THING
-            remoteExec(args.piAddress, 'service nugget debug', remoteExecOptions, error => {
-                if (error) throw error;
-                console.log('Server started in debug mode');
-                resolve();
-            })
-        );
-        return Promise.resolve();
-    }
-    await new Promise(resolve =>
-        // DO THE THING
-        remoteExec(args.piAddress, 'service nugget restart', remoteExecOptions, error => {
-            if (error) throw error;
-            console.log('Finished starting server remotely');
-            resolve();
-        })
-    );
-}
+    }, error => {
+        if (error) throw error;
+        console.log(`Server Restarted in ${args.debug ? 'debug' : 'normal'} mode`);
+        resolve();
+    })
+});
 
 async function setupSurface(args) {
     // give it a start job
