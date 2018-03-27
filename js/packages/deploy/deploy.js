@@ -64,7 +64,6 @@ const args = yargs
         desc: 'just copy the files, don\'t restart the nugget daemon on the pi',
         type: 'boolean'
     })
-
     .alias('h', 'help')
     .argv;
 
