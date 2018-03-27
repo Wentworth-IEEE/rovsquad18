@@ -16,15 +16,12 @@
 const net = require('net');
 const EventEmitter = require('events');
 const yargs = require('yargs');
-const nugLog = require('nugget-logger');
+const { nugLog, levels } = require('nugget-logger');
 const { tokenTypes, responseTypes, responseToken } = require('botprotocol');
 
-// set up logger
-const logger = new nugLog('info', 'remote.log');
-
-// make process.send do nothing if botServer was not spawned as a child process
+// if botServer wasn't spawned as a child process, make process.send do nothing
 process.send = process.send || function() {};
-// exit on any message from parent process
+// exit on any message from parent process (if it exists)
 process.on('message', process.exit);
 
 /*
@@ -43,11 +40,20 @@ const args = yargs
     .option('l', {
         alias: 'local',
         desc: 'run the server on localhost',
-        type: 'boolean',
-        implies: 'debug'
+        type: 'boolean'
+    })
+    .option('L', {
+        alias: 'logLevel',
+        desc: 'specify the logging level to use',
+        type: 'string',
+        choices: levels,
+        default: 'INFO'
     })
     .alias('h', 'help')
     .argv;
+
+// set up logger
+const logger = new nugLog(args.logLevel, 'remote.log');
 
 if (args.debug) logger.i('startup', 'running in debug mode');
 

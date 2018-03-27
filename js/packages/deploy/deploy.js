@@ -84,7 +84,7 @@ async function setupRobot(args) {
     // DEBUG MODE //
     ////////////////
     if (args.local) return new Promise(resolve => {
-        const botArgs = ['--local', '--debug'];
+        const botArgs = ['--local', '--debug', '--logLevel', 'DEBUG'];
         console.log('Starting robot in local and debug mode');
 
         const forkOptions = {
