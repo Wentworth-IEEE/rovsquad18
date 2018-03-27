@@ -51,4 +51,5 @@ class logger {
 
 }
 
-module.exports = logger;
+module.exports.nugLog = logger;
+module.exports.levels = levels;
