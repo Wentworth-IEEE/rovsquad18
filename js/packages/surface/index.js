@@ -8,7 +8,7 @@ const http = require('http');
 const yargs = require('yargs');
 const express = require('express');
 const io = require('socket.io');
-const nugLog = require('nugget-logger');
+const { nugLog } = require('nugget-logger');
 const Controller = require('controller');
 const BotSocket = require('botsocket');
 

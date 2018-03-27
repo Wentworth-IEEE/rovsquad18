@@ -88,7 +88,7 @@ async function setupRobot(args) {
 
 const spawnRobotLocalDebug = new Promise(resolve => {
     // spawn the robot as a child process, resolve when the robot is done setting up.
-    const botArgs = ['--local', '--debug'];
+    const botArgs = ['--local', '--debug', '--logLevel', 'DEBUG'];
     console.log('Starting robot in local and debug mode');
 
     const forkOptions = {
