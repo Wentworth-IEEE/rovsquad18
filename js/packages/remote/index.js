@@ -202,8 +202,9 @@ function consumeControllerData(data) {
 }
 
 function sendToken(token) {
+    console.log(token);
     // be careful with verbose logging in local mode
     // this can crash the script if too much is being logged
-    logger.v('message', 'sending it :' + token.stringify());
+    logger.v('message', 'sending it: ' + token.stringify());
     _client.write(token.stringify());
 }

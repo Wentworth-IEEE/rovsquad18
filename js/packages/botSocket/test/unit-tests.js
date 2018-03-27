@@ -1,24 +1,19 @@
 // Nugget Industries
-// 2017
+// 2018
 
 const { setupRobot } = require('deploy');
-const BotSocket = require('botsocket');
+const BotSocket = require('../');
 const assert = require('assert');
 
 const botSocket = new BotSocket();
 let serverProcess;
 
-/*
- * TODO
- * can this be broken up into tests for individual modules?
- * can each module's test scrpits just require and use deploy themselves?
- * probably.
- */
-
 before(async function() {
     this.timeout(600000);
     // start the robot in debug mode
-    serverProcess = await setupRobot(true);
+    serverProcess = await setupRobot({
+        local: true
+    });
 
     // connect to the bot
     await botSocket.connect({
@@ -32,7 +27,7 @@ after(async function() {
     serverProcess.send('goodbye');
 });
 
-describe('command tests', function() {
+describe('botSocket command tests', function() {
     // just make sure each command yields a response from the robot
     // pretty simple
     it('echo', async function() {
@@ -46,6 +41,13 @@ describe('command tests', function() {
         assert(response.roll);
     });
     it('sendControllerData', async function() {
-        assert(await botSocket.sendControllerData());
+        assert(await botSocket.sendControllerData({
+            axes: [
+                'SEND HELP'
+            ],
+            buttons: [
+                'PLEASE GOD'
+            ]
+        }));
     });
 });

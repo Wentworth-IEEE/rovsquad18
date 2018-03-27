@@ -4,7 +4,6 @@
   "description": "WIT IEEE Underwater ROV 2018 surface station",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test",
     "bootstrap": "lerna bootstrap",
     "deploy": "node packages/deploy",
     "surface": "node packages/surface"
