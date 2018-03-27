@@ -155,7 +155,7 @@ class botSocket extends EventEmitter {
 
     /**
      * Send controller data to the robot
-     * This one isn't completely implemented yet
+     * This one isn't completely implemented robot-side yet
      *
      * @async
      * @param controllerData - The controller data

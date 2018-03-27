@@ -81,7 +81,7 @@ class stopMagStreamToken extends token {
  */
 class controllerDataToken extends token {
     constructor(controllerData) {
-        super(tokenTypes.STOPMAGSTREAM, controllerData);
+        super(tokenTypes.CONTROLLERDATA, controllerData);
     }
 }
 
