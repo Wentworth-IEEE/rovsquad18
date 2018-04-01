@@ -74,13 +74,11 @@ const dashboard = io(server);
 let _dashSocket = dummySocket;
 
 // express/webserver stuff
-app.set('view engine', 'pug');
-app.set('views', __dirname + '/dashboard/templates');
 app.use('/static', express.static(__dirname + '/dashboard/static'));
 app.locals.pretty = true;
 
 // GET renderer
-app.get('/', (request, response) => response.render('index'));
+app.get('/', (request, response) => response.sendFile(__dirname + '/dashboard/index.html'));
 
 // http server shit
 server.listen(dashPort, () => logger.i('dashboard', `dashboard running on localhost:${dashPort}`));
