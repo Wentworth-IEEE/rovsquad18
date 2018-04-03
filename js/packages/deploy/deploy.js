@@ -76,7 +76,7 @@ const surfacePackageLocation = '/../surface';
 async function setupRobot(args) {
     console.log('Starting robot setup');
 
-    if (args.local) return spawnRobotLocalDebug;
+    if (args.local) return spawnRobotLocalDebug();
 
     await copyFilesToRobot(args);
 
@@ -85,7 +85,7 @@ async function setupRobot(args) {
     return restartRobot(args);
 }
 
-const spawnRobotLocalDebug = new Promise(resolve => {
+const spawnRobotLocalDebug = () => new Promise(resolve => {
     // spawn the robot as a child process, resolve when the robot is done setting up.
     const botArgs = ['--local', '--debug', '--logLevel', 'DEBUG'];
     console.log('Starting robot in local and debug mode');
