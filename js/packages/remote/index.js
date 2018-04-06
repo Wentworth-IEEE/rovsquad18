@@ -238,6 +238,7 @@ function consumeControllerData(data) {
         return;
     }
     // If it's not in debug mode, it's time to actually move things!
+    initPCA(); // initialize the PCA, if it isn't already initialized
     for (var i = 0; i < 9; i++) {
         // Just kidding, making things move for realsies is hard. For now, just do test movements.
         pwm.setDutyCycle(i, 1);        
