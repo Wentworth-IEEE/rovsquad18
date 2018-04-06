@@ -198,12 +198,49 @@ function stopMagStream(data) {
     sendToken(response.stringify());
 }
 
+// These get used in 'initPCA' and 'consumeControllerData' later.
+var is_pca_init_flag = false;
+const i2cBus = require("i2c-bus");
+const Pca9685 = require("pca9685").PCA9685Driver;
+var pwm; // giving this global scope
+
+function initPCA() {
+    if (is_pca_init_flag) {
+        // If you're here, the PCA is already set up. Exit function.
+        return;
+    }
+    // If the function hasn't already returned, there's setup to be done:
+    
+    // Options to setup the PCA with. These are the defaults, here if you need to change them.
+    const options = {
+        i2c: i2cBus.openSync(1),
+        address: 0x40,
+        frequency: 50,
+        debug: false
+    }
+
+    pwm = new Pca9685Driver(options, function(err) {
+        if (err) {
+            console.error("OH GOD I DON'T KNOW WHERE THE PCA IS"); process.exit(-1);
+        }
+        console.log("Found PCA");
+    });
+    // If we've gotten here safely, it's time to flag the PCA as set up.
+    is_pca_init_flag = true;
+    console.log("Set PCA init flag to true");
+}
+
 function consumeControllerData(data) {
     if (args.debug) {
         // do nothing if the server is running in debug mode
         const response = new responseToken({}, data.headers.transactionID);
         sendToken(response);
         return;
+    }
+    // If it's not in debug mode, it's time to actually move things!
+    for (var i = 0; i < 9; i++) {
+        // Just kidding, making things move for realsies is hard. For now, just do test movements.
+        pwm.setDutyCycle(i, 1);        
     }
 }
 
