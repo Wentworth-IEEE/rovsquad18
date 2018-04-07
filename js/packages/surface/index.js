@@ -95,7 +95,7 @@ async function main() {
     // this is commented out for now so we can focus on bot connection stuff
     // await controller.init();
     // controller.on('open', () => console.log('controller connected'));
-    // controller.on('data', data => console.log(data));
+    controller.on('data', data => botSocket.sendControllerData(data);
 
     // convert radians to degrees
     botSocket.on('magData', mag => {
