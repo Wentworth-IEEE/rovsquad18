@@ -5,11 +5,21 @@
 */
 
 // These constants won't change. They're used to give names to the pins used:
+/*
+ * S is for Strafe
+ * F is for Forwards
+ * Y is for Yaw
+ * P is for Pitch
+ * U is for Up/Down (elevation)
+ * R is for Roll
+ */
+
+
 const int joy_S_Pin = A0;  // Analog input pin that the potentiometer is attached to
 const int joy_F_Pin = A1;
 const int joy_Y_Pin = A2;
 const int joy_P_Pin = A3;
-const int joy_U_Pin = A4;
+const int joy_E_Pin = A4;
 const int joy_R_Pin = A5;
 
 const int analogOutPin = 9; // Analog output pin that the LED is attached to
@@ -18,14 +28,14 @@ double joy_S = 0;
 double joy_F = 0;
 double joy_Y = 0;
 double joy_P = 0;
-double joy_U = 0;
+double joy_E = 0;
 double joy_R = 0;
 
 double joy_S_last = 0;
 double joy_F_last = 0;
 double joy_Y_last = 0;
 double joy_P_last = 0;
-double joy_U_last = 0;
+double joy_E_last = 0;
 double joy_R_last = 0;
 
 void setup() {
@@ -44,14 +54,14 @@ void loop() {
   joy_F = dmap(analogRead(joy_F_Pin), 0, 675, -1, 1);
   joy_Y = dmap(analogRead(joy_Y_Pin), 0, 675, -1, 1);
   joy_P = dmap(analogRead(joy_P_Pin), 0, 675, -1, 1);
-  joy_U = dmap(analogRead(joy_U_Pin), 0, 675, -1, 1);
+  joy_E = dmap(analogRead(joy_E_Pin), 0, 675, -1, 1);
   joy_R = dmap(analogRead(joy_R_Pin), 0, 675, -1, 1);
 
   if( !(joy_S < joy_S_last+.02 && joy_S > joy_S_last-.02) ||
       !(joy_F < joy_F_last+.02 && joy_F > joy_F_last-.02) ||
       !(joy_Y < joy_Y_last+.02 && joy_Y > joy_Y_last-.02) ||
       !(joy_P < joy_P_last+.02 && joy_P > joy_P_last-.02) ||
-      !(joy_U < joy_U_last+.02 && joy_U > joy_U_last-.02) ||
+      !(joy_E < joy_E_last+.02 && joy_E > joy_E_last-.02) ||
       !(joy_R < joy_R_last+.02 && joy_R > joy_R_last-.02) ) {
 
 
@@ -72,7 +82,7 @@ void loop() {
     Serial.print(joy_R, 6);
 
     Serial.print(",");
-    Serial.print(joy_U, 6);
+    Serial.print(joy_E, 6);
 
     Serial.print("],\"buttons\":[0]}");
     Serial.print("\n");
@@ -81,7 +91,7 @@ void loop() {
     joy_F_last = joy_F;
     joy_Y_last = joy_Y;
     joy_P_last = joy_P;
-    joy_U_last = joy_U;
+    joy_E_last = joy_E;
     joy_R_last = joy_R;
 
 
