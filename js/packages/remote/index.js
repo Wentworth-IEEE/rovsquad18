@@ -201,7 +201,7 @@ function stopMagStream(data) {
 // These get used in 'initPCA' and 'consumeControllerData' later.
 var is_pca_init_flag = false;
 const i2cBus = require("i2c-bus");
-const Pca9685 = require("pca9685").PCA9685Driver;
+const Pca9685Driver = require("pca9685").Pca9685Driver;
 var pwm; // giving this global scope
 
 function initPCA() {
@@ -230,6 +230,17 @@ function initPCA() {
     console.log("Set PCA init flag to true");
 }
 
+function joystickMap(i) {
+    // Turn the range of values from the controller (-1 to 1) into
+    // a PWM-friendly range (0.0... to 1.0)
+    return (i+1)/2;
+}
+function controlLoop(goal) {
+    // At some point, this will have constants and stuff to make it more useful.
+    // Until then, and until it can be tuned, just do it directly:
+    return joystickMap(goal);
+}
+
 function consumeControllerData(data) {
     if (args.debug) {
         // do nothing if the server is running in debug mode
@@ -239,9 +250,9 @@ function consumeControllerData(data) {
     }
     // If it's not in debug mode, it's time to actually move things!
     initPCA(); // initialize the PCA, if it isn't already initialized
-    for (var i = 0; i < 9; i++) {
-        // Just kidding, making things move for realsies is hard. For now, just do test movements.
-        pwm.setDutyCycle(i, 1);        
+    for (var i = 0; i < 6; i++) {
+        // Go through each PWM and do the appropriate action
+        pwm.setDutyCycle(i, controlLoop(data.joysticks[i]));
     }
 }
 
