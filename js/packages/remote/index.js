@@ -231,6 +231,26 @@ function initPCA() {
 }
 
 function consumeControllerData(data) {
+    const c_log = new logger('info');
+    const i2cBus = require("i2c-bus");
+    const Pca9685 = require("pca9685").PCA9685Driver;
+    
+    // Options to setup the PCA with. These are the defaults, here if you need to change them.
+    const options = {
+        i2c: i2cBus.openSync(1),
+        address: 0x40,
+        frequency: 50,
+        debug: false
+    }
+
+    let pwm = new Pca9685Driver(options, function(err) {
+        if (err) {
+            c_log.e('all', "OH GOD I DON'T KNOW WHERE THE PCA IS"); process.exit(-1);
+        }
+        c_log.i('info', "Found PCA");
+    });
+    
+    c_log.i('info', 'Consuming controller data');
     if (args.debug) {
         // do nothing if the server is running in debug mode
         const response = new responseToken({}, data.headers.transactionID);
@@ -241,6 +261,7 @@ function consumeControllerData(data) {
     initPCA(); // initialize the PCA, if it isn't already initialized
     for (var i = 0; i < 9; i++) {
         // Just kidding, making things move for realsies is hard. For now, just do test movements.
+        c_log.v('all', 'moving');
         pwm.setDutyCycle(i, 1);        
     }
 }

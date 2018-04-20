@@ -24,12 +24,17 @@ if(!mpu.initialize()) {
     return;
 }
 
+let values = mpu.getMotion9();
+
+// NOTE: Because of how it's layed out in the board, roll is not actually roll, etc.
+
+// 0 is only ever returned for Yaw in this setup- I'll narrow it down later, and put a 0 here for now.
 function getYaw() {
     return 0;
 }
 
 function getPitch() {
-    return 0;
+    return ;
 }
 
 function getElevate() {
@@ -53,7 +58,8 @@ function reactPitch() {
 function reactElevate() {
 }
 
-function reactStafe() {
+function reactStrafe() {
+
 }
 
 function reactForwards() {
