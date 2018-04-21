@@ -213,6 +213,12 @@ function stopMagStream(data) {
     sendToken(response.stringify());
 }
 
+function joystickMap(i) {
+    // Turn the range of values from the controller (-1 to 1) into
+    // a PWM-friendly range (0.0... to 1.0)
+    return (i+1)/2;
+}
+
 function consumeControllerData(data) {
     if (args.debug) {
         // do nothing if the server is running in debug mode
@@ -220,8 +226,18 @@ function consumeControllerData(data) {
         sendToken(response);
         return;
     }
-    logger.d('PCA-debug', 'setting channel 0 to 50% duty cycle');
-    pca.setDutyCycle(0, 0.5)
+    
+    logger.d('PCA-debug', 'Setting PCA values.');
+    logger.d('PCA-debug', data);
+    
+    let joystick = data.joysticks;
+
+    pca.setDutyCycle(0, joystickMap(joystick[3]));
+    pca.setDutyCycle(1, joystickMap(joystick[2]));
+    pca.setDutyCycle(2, joystickMap(joystick[0]));   
+    pca.setDutyCycle(3, joystickMap(joystick[1]));
+    pca.setDutyCycle(4, joystickMap(joystick[4]));
+    pca.setDutyCycle(5, joystickMap(joystick[5]));
 }
 
 function sendToken(token) {
