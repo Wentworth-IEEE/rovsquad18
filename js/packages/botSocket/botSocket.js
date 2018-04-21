@@ -161,7 +161,7 @@ class botSocket extends EventEmitter {
      * @param controllerData - The controller data
      * @returns {Promise<*>} Resolves when the robot ackgnowledges and processes the request
      */
-    async sendControllerData(controllerData) {
+    async sendControllerData(controllerData = {}) {
         const token = new botProtocol.controllerDataToken(controllerData);
         return await this.sendToken(token);
     }

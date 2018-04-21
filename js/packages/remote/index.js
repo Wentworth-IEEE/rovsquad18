@@ -18,6 +18,8 @@ const EventEmitter = require('events');
 const yargs = require('yargs');
 const { nugLog, levels } = require('nugget-logger');
 const { tokenTypes, responseTypes, responseToken } = require('botprotocol');
+const i2cbus = require('i2c-bus');
+const { Pca9685Driver } = require("pca9685");
 
 // if botServer wasn't spawned as a child process, make process.send do nothing
 process.send = process.send || function() {};
@@ -43,7 +45,7 @@ const args = yargs
         type: 'boolean'
     })
     .option('L', {
-        alias: 'logLevel',
+        alias: 'log-level',
         desc: 'specify the logging level to use',
         type: 'string',
         choices: levels,
@@ -54,6 +56,7 @@ const args = yargs
 
 // set up logger
 const logger = new nugLog(args.logLevel, 'remote.log');
+console.log(`logging at level ${args.logLevel}`);
 
 if (args.debug) logger.i('startup', 'running in debug mode');
 
@@ -61,6 +64,18 @@ if (args.debug) logger.i('startup', 'running in debug mode');
 const address = args.local ? '127.0.0.1' : '0.0.0.0';
 const port = 8080;
 const emitter = new EventEmitter();
+const pca = new Pca9685Driver({
+    i2c: i2cbus.openSync(1),
+    address: 0x40,
+    frequency: 50,
+    debug: false
+}, error => {
+    if (error) {
+        logger.e('PCA Init', 'wow some serious shit happened trying to initialize the PCA. here\'s some more on that:\n');
+        throw error;
+    }
+    logger.i('PCA Init', 'PCA Initialized successfully');
+});
 
 // global not-constants
 let _client;
@@ -103,7 +118,7 @@ function onServerConnection(client) {
 }
 
 function onClientData(data) {
-    logger.v('message', `Hey I got this: ${data}`);
+    logger.d('message', `Hey I got this: ${data}`);
     data = JSON.parse(data);
     emitter.emit(data.type, data);
 }
@@ -132,11 +147,11 @@ function onClientError(error) {
  * This server gets data from the surface in the form of stringified botProtocol tokens.
  * botProtocol tokens look like this:
  * {
- *   type: [botProtocol.tokenType]
+ *   type: botProtocol.tokenType
  *   headers: {
- *     transactionID: [UUIDv1]
+ *     transactionID: UUIDv1
  *   }
- *   body: [whatever ur feelin]
+ *   body: message body
  * }
  * When the server gets one of these tokens, [emitter] will emit an event with the token's
  * 'type' as the event name and with the whole token itself as the callback parameter.
@@ -205,12 +220,13 @@ function consumeControllerData(data) {
         sendToken(response);
         return;
     }
+    logger.d('PCA-debug', 'setting channel 0 to 50% duty cycle');
+    pca.setDutyCycle(0, 0.5)
 }
 
 function sendToken(token) {
-    console.log(token);
     // be careful with verbose logging in local mode
     // this can crash the script if too much is being logged
-    logger.v('message', 'sending it: ' + token.stringify());
+    logger.d('message', 'sending it: ' + token.stringify());
     _client.write(token.stringify());
 }
