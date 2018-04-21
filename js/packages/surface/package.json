@@ -12,6 +12,7 @@
     "botsocket": "file:../botSocket",
     "controller": "file:../controller",
     "express": "^4.16.2",
+    "gamepad": "^1.5.2",
     "nugget-logger": "file:../nugget-logger",
     "serialport": "^5.0.0",
     "socket.io": "^2.0.4",

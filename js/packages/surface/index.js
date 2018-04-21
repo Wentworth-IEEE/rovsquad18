@@ -8,9 +8,13 @@ const http = require('http');
 const yargs = require('yargs');
 const express = require('express');
 const io = require('socket.io');
+const gamepad = require('gamepad');
 const { nugLog } = require('nugget-logger');
 const Controller = require('controller');
 const BotSocket = require('botsocket');
+
+gamepad.init();
+setInterval(gamepad.processEvents, 10);
 
 // set up logger
 const logger = new nugLog('info', 'surface.log');
@@ -56,6 +60,7 @@ const dummySocket = {
     emit: () => {
         if (this.notified)
             return;
+
         logger.w('dashboard', 'dashboard disconnected WHAT HAVE YOU DONE OPEN IT BACK UP');
         this.notified = true;
     }
@@ -96,6 +101,9 @@ async function main() {
     // await controller.init();
     // controller.on('open', () => console.log('controller connected'));
     controller.on('data', data => botSocket.sendControllerData(data));
+    gamepad.on('move', gamepadOnMove);
+    gamepad.on('up', gamepadOnUp);
+    gamepad.on('down', gamepadOnDown);
 
     // convert radians to degrees
     botSocket.on('magData', mag => {
@@ -110,8 +118,6 @@ async function main() {
         socket.on('connectToBot', async () => {
             await botSocket.connect(options);
             await botSocket.startMagStream(17);
-            logger.d('send-controller-data', 'Sending empty controller data object!!');
-            await botSocket.sendControllerData();
         });
 
         socket.on('disconnectFromBot', async () => {
@@ -126,6 +132,20 @@ async function main() {
         _dashSocket = socket;
     });
 
+}
+
+async function gamepadOnMove(id, axis, value) {
+    logger.d('gamepad', `Axis ${axis} on joystick ${id}: ${value}`);
+    await botSocket.sendControllerData(['move', id, axis, value]);
+}
+async function gamepadOnUp(id, num) {
+    logger.d('gamepad', `Button ${num} on joystick ${id} was released`);
+    await botSocket.sendControllerData(['up', id, num]);
+}
+
+async function gamepadOnDown(id, num) {
+    logger.d('gamepad', `Button ${num} on joystick ${id} was pressed`);
+    await botSocket.sendControllerData(['down', id, num]);
 }
 
 main().catch(error => console.error(error));

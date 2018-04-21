@@ -13,7 +13,7 @@ const { nugLog } = require('nugget-logger');
 const botProtocol = require('botprotocol'), responseTypes = botProtocol.responseTypes;
 
 // set up logger
-const logger = new nugLog('info', 'botSocket.log');
+const logger = new nugLog('verbose', 'botSocket.log');
 
 // emitter is used to emit responses from the robot with the event type being the response's transactionID.
 const emitter = new EventEmitter();
@@ -173,6 +173,11 @@ class botSocket extends EventEmitter {
      * @returns {Promise<*>}
      */
     sendToken(token) {
+        if (!this._isConnected) {
+            logger.d('sendToken', 'YOU\'RE NOT CONNECTED YOU FUCKING BITCH');
+            return;
+        }
+
         return new Promise(resolve => {
             this._socket.write(token.stringify());
             emitter.once(token.headers.transactionID, data => {
