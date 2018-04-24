@@ -110,6 +110,8 @@ async function main() {
         socket.on('connectToBot', async () => {
             await botSocket.connect(options);
             await botSocket.startMagStream(17);
+            logger.d('send-controller-data', 'Sending empty controller data object!!');
+            await botSocket.sendControllerData();
         });
 
         socket.on('disconnectFromBot', async () => {

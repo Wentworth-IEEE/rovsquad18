@@ -18,6 +18,8 @@ const EventEmitter = require('events');
 const yargs = require('yargs');
 const { nugLog, levels } = require('nugget-logger');
 const { tokenTypes, responseTypes, responseToken } = require('botprotocol');
+const i2cbus = require('i2c-bus');
+const { Pca9685Driver } = require("pca9685");
 
 // if botServer wasn't spawned as a child process, make process.send do nothing
 process.send = process.send || function() {};
@@ -43,7 +45,7 @@ const args = yargs
         type: 'boolean'
     })
     .option('L', {
-        alias: 'logLevel',
+        alias: 'log-level',
         desc: 'specify the logging level to use',
         type: 'string',
         choices: levels,
@@ -54,6 +56,7 @@ const args = yargs
 
 // set up logger
 const logger = new nugLog(args.logLevel, 'remote.log');
+console.log(`logging at level ${args.logLevel}`);
 
 if (args.debug) logger.i('startup', 'running in debug mode');
 
@@ -61,6 +64,18 @@ if (args.debug) logger.i('startup', 'running in debug mode');
 const address = args.local ? '127.0.0.1' : '0.0.0.0';
 const port = 8080;
 const emitter = new EventEmitter();
+const pca = new Pca9685Driver({
+    i2c: i2cbus.openSync(1),
+    address: 0x40,
+    frequency: 50,
+    debug: false
+}, error => {
+    if (error) {
+        logger.e('PCA Init', 'wow some serious shit happened trying to initialize the PCA. here\'s some more on that:\n');
+        throw error;
+    }
+    logger.i('PCA Init', 'PCA Initialized successfully');
+});
 
 // global not-constants
 let _client;
@@ -103,7 +118,7 @@ function onServerConnection(client) {
 }
 
 function onClientData(data) {
-    logger.v('message', `Hey I got this: ${data}`);
+    logger.d('message', `Hey I got this: ${data}`);
     data = JSON.parse(data);
     emitter.emit(data.type, data);
 }
@@ -132,11 +147,11 @@ function onClientError(error) {
  * This server gets data from the surface in the form of stringified botProtocol tokens.
  * botProtocol tokens look like this:
  * {
- *   type: [botProtocol.tokenType]
+ *   type: botProtocol.tokenType
  *   headers: {
- *     transactionID: [UUIDv1]
+ *     transactionID: UUIDv1
  *   }
- *   body: [whatever ur feelin]
+ *   body: message body
  * }
  * When the server gets one of these tokens, [emitter] will emit an event with the token's
  * 'type' as the event name and with the whole token itself as the callback parameter.
@@ -198,77 +213,62 @@ function stopMagStream(data) {
     sendToken(response.stringify());
 }
 
-// These get used in 'initPCA' and 'consumeControllerData' later.
-var is_pca_init_flag = false;
-const i2cBus = require("i2c-bus");
-const Pca9685 = require("pca9685").PCA9685Driver;
-var pwm; // giving this global scope
-
-function initPCA() {
-    if (is_pca_init_flag) {
-        // If you're here, the PCA is already set up. Exit function.
-        return;
-    }
-    // If the function hasn't already returned, there's setup to be done:
-    
-    // Options to setup the PCA with. These are the defaults, here if you need to change them.
-    const options = {
-        i2c: i2cBus.openSync(1),
-        address: 0x40,
-        frequency: 50,
-        debug: false
-    }
-
-    pwm = new Pca9685Driver(options, function(err) {
-        if (err) {
-            console.error("OH GOD I DON'T KNOW WHERE THE PCA IS"); process.exit(-1);
-        }
-        console.log("Found PCA");
-    });
-    // If we've gotten here safely, it's time to flag the PCA as set up.
-    is_pca_init_flag = true;
-    console.log("Set PCA init flag to true");
+function joystickMap(i) {
+    // Turn the range of values from the controller (-1 to 1) into
+    // a PWM-friendly range (0.0... to 1.0)
+    return (i+1)/2;
 }
 
 function consumeControllerData(data) {
-    const i2cBus = require("i2c-bus");
-    const Pca9685 = require("pca9685").PCA9685Driver;
-    
-    // Options to setup the PCA with. These are the defaults, here if you need to change them.
-    const options = {
-        i2c: i2cBus.openSync(1),
-        address: 0x40,
-        frequency: 50,
-        debug: false
-    }
-
-    let pwm = new Pca9685Driver(options, function(err) {
-        if (err) {
-            logger.e('all', "OH GOD I DON'T KNOW WHERE THE PCA IS"); process.exit(-1);
-        }
-        logger.i('info', "Found PCA");
-    });
-    
-    logger.i('info', 'Consuming controller data');
     if (args.debug) {
         // do nothing if the server is running in debug mode
         const response = new responseToken({}, data.headers.transactionID);
         sendToken(response);
         return;
     }
-    // If it's not in debug mode, it's time to actually move things!
-    initPCA(); // initialize the PCA, if it isn't already initialized
-    for (var i = 0; i < 9; i++) {
-        // Just kidding, making things move for realsies is hard. For now, just do test movements.
-        logger.v('all', 'moving');
-        pwm.setDutyCycle(i, 1);        
+    // If we got here, we're not in debug mode!
+    logger.d('PCA-debug', 'Setting PCA values.');
+    logger.d('PCA-debug', data);
+    
+    // Joystick info here comes out in the following order:
+    // [forwards, strafe, pitch, yaw, claw, elevate]
+    let joystick = data.joysticks;
+
+    // These arrays represent directions of thrusters to achieve certain movements.
+    // Arrays are in the order [F, LF, RF, B, LB, RB]
+    let f_arr = [ 0,  1,  1,  0,  1,  1]; // forwards (front is positive)
+    let s_arr = [ 0,  1, -1,  0, -1,  1]; // strafe (right is positive)
+    let y_arr = [ 0,  1, -1,  0,  1, -1]; // yaw (clockwise is positive)
+    let e_arr = [ 1,  0,  0,  1,  0,  0]; // elevate (up is positive)
+    let p_arr = [ 1,  0,  0, -1,  0,  0]; // pitch (pitch up is positive)
+
+    let setpoint = [0,0,0,0,0,0];
+
+    for(let i = 0; i < 6; i++) {
+        setpoint[i] += joystick[0]*f_arr[i];
+        setpoint[i] += joystick[1]*s_arr[i];
+        setpoint[i] += joystick[3]*y_arr[i];
+        setpoint[i] += joystick[5]*e_arr[i];
+        setpoint[i] += joystick[2]*p_arr[i];
+    }
+    
+    let max_e = Math.abs(Math.max(setpoint[0], setpoint[1]));
+    setpoint[0] /= max_e;
+    setpoint[1] /= max_e;
+
+    let max_l = Math.abs(Math.max(setpoint[2], setpoint[3], setpoint[4], setpoint[5]));
+    for(let i = 2; i < 6; i++) {
+        setpoint[i] /= max_l;
+    }
+
+    for(let i = 0; i < 6; i++) {
+        pwm.setDutyCycle(i, setpoint[i]);
     }
 }
 
 function sendToken(token) {
-    console.log(token);
     // be careful with verbose logging in local mode
     // this can crash the script if too much is being logged
-    logger.v('message', 'sending it: ' + token.stringify());
+    logger.d('message', 'sending it: ' + token.stringify());
     _client.write(token.stringify());
 }
