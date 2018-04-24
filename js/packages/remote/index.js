@@ -266,9 +266,14 @@ function consumeControllerData(data) {
         setpoint[5] /= max_l;
     }
 
-    for(let i = 0; i < 6; i++) {
-        pwm.setDutyCycle(i, setpoint[i]);
-    }
+    // The hardware location of the PWM isn't 0-5, so a final translation happens here.
+    pwm.setDutyCycle(1,  setpoint[1]); // Front
+    pwm.setDutyCycle(2,  setpoint[4]); // Left Back
+    pwm.setDutyCycle(3,  setpoint[1]); // Left Front
+    pwm.setDutyCycle(8,  setpoint[2]); // Right Front
+    pwm.setDutyCycle(9,  setpoint[5]); // Right Back
+    pwm.setDutyCycle(11, setpoint[3]); // Back
+
 }
 
 function sendToken(token) {
