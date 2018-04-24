@@ -38,9 +38,14 @@ const args = yargs
     .usage('Usage: $0 [options]')
     .version(false)
     .option('d', {
-        alias: 'debug',
-        desc: 'use fake sensor values instead of real onez',
-        type: 'boolean'
+        alias: 'daemon-action',
+        desc: 'command to use when restarting nugget daemon',
+        choices: [
+            'restart',
+            'debug',
+            'debugLogging'
+        ],
+        default: 'restart'
     })
     .option('l', {
         alias: 'local',
@@ -119,13 +124,13 @@ const copyFilesToRobot = args => new Promise(resolve => {
 const restartRobot = args => new Promise(resolve => {
     // restart nugget daemon, resolve when complete
     console.log('Restarting server remotely');
-    remoteExec(args.piAddress, `service nugget ${args.debug ? 'debug' : 'restart'}`, {
+    remoteExec(args.piAddress, `service nugget ${args.daemonAction}`, {
         username: 'root',
         password: 'spacenugget',
         readyTimeout: 99000
     }, error => {
         if (error) throw error;
-        console.log(`Server Restarted in ${args.debug ? 'debug' : 'normal'} mode`);
+        console.log(`Server Restarted in ${args.daemonAction} mode`);
         resolve();
     })
 });
