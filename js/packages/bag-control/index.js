@@ -4,31 +4,29 @@ const gpio = require('pigpio').Gpio,
     bagTwoOpen  = new gpio(24, {mode: gpio.OUTPUT}),
     bagTwoClose = new gpio(25, {mode: gpio.OUTPUT});
 
-class bagControl {
-    openBagOne() {
+module.exports = {
+    openBagOne: function() {
         pulsePin(bagOneOpen);
-    }
+    },
 
-    closeBagOne() {
+    closeBagOne: function() {
         pulsePin(bagOneClose);
-    }
+    },
 
-    openBagTwo() {
+    openBagTwo: function() {
         pulsePin(bagTwoOpen);
-    }
+    },
 
-    closeBagTwo() {
+    closeBagTwo: function() {
         pulsePin(bagTwoClose);
-    }
-
-    pulsePin(pin) {
-        console.log('Pin on!');
-        pin.digitalWrite(1);
-        setTimeout(() => {
-            console.log('Pin off!');
-            pin.digitalWrite(0);
-        }, 100);
     }
 }
 
-module.exports.bagControl = bagControl;
+function pulsePin(pin) {
+    console.log('Pin on!');
+    pin.digitalWrite(1);
+    setTimeout(() => {
+        console.log('Pin off!');
+        pin.digitalWrite(0);
+    }, 100);
+}
