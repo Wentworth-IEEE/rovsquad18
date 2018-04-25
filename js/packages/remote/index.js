@@ -252,19 +252,27 @@ function consumeControllerData(data) {
         setpoint[i] += joystick[2]*p_arr[i];
     }
     
-    let max_e = Math.abs(Math.max(setpoint[0], setpoint[1]));
+    let max_e = Math.abs(Math.max(setpoint[0], setpoint[3]));
     if(max_e > 1) {
         setpoint[0] /= max_e;
         setpoint[3] /= max_e;
     }
 
-    let max_l = Math.abs(Math.max(setpoint[2], setpoint[3], setpoint[4], setpoint[5]));
+    let max_l = Math.abs(Math.max(setpoint[1], setpoint[2], setpoint[4], setpoint[5]));
     if(max_l > 1) {
         setpoint[1] /= max_l;
         setpoint[2] /= max_l;
         setpoint[4] /= max_l;
         setpoint[5] /= max_l;
     }
+
+    if(Math.abs(setpoint[0])-slack < 0)
+        setpoint[0] = stabilize_f();
+
+    if(Math.abs(setpoint[1])-slack < 0))
+        setpoint[1] = stabilize_lf();
+
+    if(Math.abs(setpoint[2]
 
     // The hardware location of the PWM isn't 0-5, so a final translation happens here.
     pwm.setDutyCycle(1,  setpoint[1]); // Front
