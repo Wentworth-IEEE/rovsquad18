@@ -245,11 +245,11 @@ function consumeControllerData(data) {
     let setpoint = [0,0,0,0,0,0];
 
     for(let i = 0; i < 6; i++) {
-        setpoint[i] += joystick[0]*f_arr[i];
-        setpoint[i] += joystick[1]*s_arr[i];
-        setpoint[i] += joystick[3]*y_arr[i];
-        setpoint[i] += joystick[5]*e_arr[i];
-        setpoint[i] += joystick[2]*p_arr[i];
+        setpoint[i] += joystickMap(joystick[0])*f_arr[i];
+        setpoint[i] += joystickMap(joystick[1])*s_arr[i];
+        setpoint[i] += joystickMap(joystick[3])*y_arr[i];
+        setpoint[i] += joystickMap(joystick[5])*e_arr[i];
+        setpoint[i] += joystickMap(joystick[2])*p_arr[i];
     }
     
     let max_e = Math.abs(Math.max(setpoint[0], setpoint[3]));
@@ -281,7 +281,6 @@ function consumeControllerData(data) {
     pwm.setDutyCycle(8,  setpoint[2]); // Right Front
     pwm.setDutyCycle(9,  setpoint[5]); // Right Back
     pwm.setDutyCycle(11, setpoint[3]); // Back
-
 }
 
 function sendToken(token) {
