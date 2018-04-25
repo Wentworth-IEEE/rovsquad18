@@ -12,12 +12,13 @@ const gamepad = require('gamepad');
 const { nugLog } = require('nugget-logger');
 const Controller = require('controller');
 const BotSocket = require('botsocket');
+const JoystickMapper = require('joystick-mapper');
 
 gamepad.init();
 setInterval(gamepad.processEvents, 10);
 
 // set up logger
-const logger = new nugLog('info', 'surface.log');
+const logger = new nugLog('debug', 'surface.log');
 
 // socket.io dashboard port
 const dashPort = 80;
@@ -71,11 +72,13 @@ const controller = new Controller();
 
 // botSocket!!!!
 const botSocket = new BotSocket();
+const mapper = new JoystickMapper();
 
 // socket.io stuff
 const app = express();
 const server = http.Server(app);
 const dashboard = io(server);
+
 let _dashSocket = dummySocket;
 
 // express/webserver stuff
@@ -134,18 +137,47 @@ async function main() {
 
 }
 
+const directionsMap = {
+    forwardBackward: 0,
+    turnYaw: 1,
+    pitch: 2,
+    strafe: 3,
+    depth: 4
+};
+let direction;
+const joystickMap = {
+    0: async (value) => {
+        direction = joystickButtons[0]
+            ? directionsMap.pitch
+            : directionsMap.forwardBackward;
+        console.log(direction, -value);
+        // await botSocket.sendControllerData(direction, -value)
+    },
+    1: async (value) => {
+        direction = joystickButtons[1]
+            ? directionsMap.strafe
+            : directionsMap.turnYaw;
+        console.log(direction, value)
+    },
+    5: async (value) => {
+        await botSocket.sendLEDTestData(-value);
+    }
+};
+
+const joystickButtons = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
 async function gamepadOnMove(id, axis, value) {
-    logger.d('gamepad', `Axis ${axis} on joystick ${id}: ${value}`);
-    await botSocket.sendControllerData(['move', id, axis, value]);
+    joystickMap[axis](value);
 }
+
 async function gamepadOnUp(id, num) {
-    logger.d('gamepad', `Button ${num} on joystick ${id} was released`);
-    await botSocket.sendControllerData(['up', id, num]);
+    joystickButtons[num] = 0;
+    logger.d('gamepad', joystickButtons);
 }
 
 async function gamepadOnDown(id, num) {
-    logger.d('gamepad', `Button ${num} on joystick ${id} was pressed`);
-    await botSocket.sendControllerData(['down', id, num]);
+    joystickButtons[num] = 1;
+    logger.d('gamepad', joystickButtons);
 }
 
 main().catch(error => console.error(error));

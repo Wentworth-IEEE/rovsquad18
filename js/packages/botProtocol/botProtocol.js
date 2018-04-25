@@ -16,7 +16,8 @@ const tokenTypes = {
     READMAG: 'readMag',
     STARTMAGSTREAM: 'startMagStream',
     STOPMAGSTREAM: 'stopMagStream',
-    CONTROLLERDATA: 'controllerData'
+    CONTROLLERDATA: 'controllerData',
+    LEDTEST: 'LEDTest'
 };
 const responseTypes = {
     MAGDATA: 'magData'
@@ -75,13 +76,22 @@ class stopMagStreamToken extends token {
 // CONTROLLER DATA TOKEN
 /*
  * {
- *   axes: []
- *   buttons: []
+ *   num: integer
+ *   val: float
  * }
  */
 class controllerDataToken extends token {
-    constructor(controllerData) {
-        super(tokenTypes.CONTROLLERDATA, controllerData);
+    constructor(dir, val) {
+        super(tokenTypes.CONTROLLERDATA, {
+            dir: dir,
+            val: val
+        });
+    }
+}
+
+class LEDTestToken extends token {
+    constructor(brightness) {
+        super(tokenTypes.LEDTEST, brightness);
     }
 }
 
@@ -94,5 +104,6 @@ module.exports = {
     readMagToken: readMagToken,
     startMagStreamToken: startMagStreamToken,
     stopMagStreamToken: stopMagStreamToken,
-    controllerDataToken: controllerDataToken
+    controllerDataToken: controllerDataToken,
+    LEDTestToken: LEDTestToken
 };

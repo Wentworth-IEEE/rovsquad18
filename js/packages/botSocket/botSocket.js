@@ -13,7 +13,7 @@ const { nugLog } = require('nugget-logger');
 const botProtocol = require('botprotocol'), responseTypes = botProtocol.responseTypes;
 
 // set up logger
-const logger = new nugLog('verbose', 'botSocket.log');
+const logger = new nugLog('debug', 'botSocket.log');
 
 // emitter is used to emit responses from the robot with the event type being the response's transactionID.
 const emitter = new EventEmitter();
@@ -158,11 +158,17 @@ class botSocket extends EventEmitter {
      * This one isn't completely implemented robot-side yet
      *
      * @async
-     * @param controllerData - The controller data
+     * @param direction - Degree of movement number
+     * @param val - That axis' value
      * @returns {Promise<*>} Resolves when the robot ackgnowledges and processes the request
      */
-    async sendControllerData(controllerData = {}) {
-        const token = new botProtocol.controllerDataToken(controllerData);
+    async sendControllerData(direction, val) {
+        const token = new botProtocol.controllerDataToken(direction, val);
+        return await this.sendToken(token);
+    }
+
+    async sendLEDTestData(brightness) {
+        const token = new botProtocol.LEDTestToken(brightness);
         return await this.sendToken(token);
     }
 
@@ -179,6 +185,7 @@ class botSocket extends EventEmitter {
         }
 
         return new Promise(resolve => {
+            logger.d('sendToken', `sending it: ${JSON.stringify(token)}`);
             this._socket.write(token.stringify());
             emitter.once(token.headers.transactionID, data => {
                 resolve(data.body);

@@ -18,8 +18,10 @@ const EventEmitter = require('events');
 const yargs = require('yargs');
 const { nugLog, levels } = require('nugget-logger');
 const { tokenTypes, responseTypes, responseToken } = require('botprotocol');
-const i2cbus = require('i2c-bus');
 const { Pca9685Driver } = require("pca9685");
+let i2cbus = {
+    openSync: () => 69
+};
 
 // if botServer wasn't spawned as a child process, make process.send do nothing
 process.send = process.send || function() {};
@@ -54,6 +56,9 @@ const args = yargs
     .alias('h', 'help')
     .argv;
 
+if (!args.local)
+    i2cbus = require('i2c-bus');
+
 // set up logger
 const logger = new nugLog(args.logLevel, 'remote.log');
 console.log(`logging at level ${args.logLevel}`);
@@ -61,21 +66,42 @@ console.log(`logging at level ${args.logLevel}`);
 if (args.debug) logger.i('startup', 'running in debug mode');
 
 // global constants
-const address = args.local ? '127.0.0.1' : '0.0.0.0';
+const address = '0.0.0.0';
 const port = 8080;
 const emitter = new EventEmitter();
-const pca = new Pca9685Driver({
-    i2c: i2cbus.openSync(1),
-    address: 0x40,
-    frequency: 50,
-    debug: false
-}, error => {
-    if (error) {
-        logger.e('PCA Init', 'wow some serious shit happened trying to initialize the PCA. here\'s some more on that:\n');
-        throw error;
-    }
-    logger.i('PCA Init', 'PCA Initialized successfully');
-});
+let pca;
+
+if (!args.local)
+    pca = new Pca9685Driver({
+        i2c: i2cbus.openSync(1),
+        address: 0x40,
+        frequency: 50,
+        debug: false
+    }, error => {
+        if (error) {
+            logger.e('PCA Init', 'wow some serious shit happened trying to initialize the PCA. here\'s some more on that:\n');
+            throw error;
+        }
+        logger.i('PCA Init', 'PCA Initialized successfully');
+    });
+
+//////////////////////////////
+// joystick & mapping stuff //
+//////////////////////////////
+
+const directionValues = [0, 0, 0, 0, 0];
+// maps motor values (rows) to joystick values (columns)
+const motorMapMatrix = [
+    // F/B, Turn, Pitch, Strafe, Depth
+    [1, 1, 0, 1, 0],    // LF
+    [1, -1, 0, -1, 0],  // RF
+    [1, 1, 0, -1, 0],   // LB
+    [1, -1, 0, 1, 0],   // RB
+    [0, 0, -1, 0, 1],   // F
+    [0, 0, 1, 0, 1]     // B
+];
+// maps each motor position to its PWM channel
+const motorChannels = [ 3, 8, 2, 9, 1, 11 ];
 
 // global not-constants
 let _client;
@@ -164,6 +190,7 @@ emitter.on(tokenTypes.READMAG, readMag);
 emitter.on(tokenTypes.STARTMAGSTREAM, startMagStream);
 emitter.on(tokenTypes.STOPMAGSTREAM, stopMagStream);
 emitter.on(tokenTypes.CONTROLLERDATA, consumeControllerData);
+emitter.on(tokenTypes.LEDTEST, LEDTest);
 
 // respond with the same body as the request
 function echo(data) {
@@ -222,7 +249,26 @@ function consumeControllerData(data) {
         sendToken(response);
         return;
     }
+    directionValues[data.dir] = data.val;
+    setMotorValues();
+}
 
+function setMotorValues() {
+    motorMapMatrix.map((row, rowIndex) => {
+        const channel = row.reduce((sum, dir, index) => sum + dir * directionValues[index], 0) / 2;
+        pca.setDutyCycle(motorChannels[rowIndex], channel)
+    });
+}
+
+function LEDTest(data) {
+    const dutyCycle = (data.body + 1) / 2;
+    if (args.debug)
+        return;
+
+    [5, 6].map(channel => {
+        logger.d('LEDTest', `${channel} ${dutyCycle}`);
+        pca.setDutyCycle(channel, dutyCycle)
+    });
 }
 
 function sendToken(token) {
