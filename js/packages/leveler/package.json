@@ -7,5 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Chris Thierauf",
-  "license": "GPL-3.0"
+  "license": "GPL-3.0",
+  "dependencies": {
+    "i2c-bus": "^3.2.0",
+    "pca9685": "^4.0.3",
+    "pigpio": "^1.0.0"
+  }
 }
