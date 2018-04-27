@@ -158,7 +158,7 @@ class botSocket extends EventEmitter {
      * This one isn't completely implemented robot-side yet
      *
      * @async
-     * @param direction - Degree of movement number
+     * @param direction - Degree of freedom number
      * @param val - That axis' value
      * @returns {Promise<*>} Resolves when the robot ackgnowledges and processes the request
      */

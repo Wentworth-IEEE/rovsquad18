@@ -100,13 +100,22 @@ server.listen(dashPort, () => logger.i('dashboard', `dashboard running on localh
  */
 async function main() {
 
-    // this is commented out for now so we can focus on bot connection stuff
-    // await controller.init();
-    // controller.on('open', () => console.log('controller connected'));
-    controller.on('data', data => botSocket.sendControllerData(data));
-    gamepad.on('move', gamepadOnMove);
-    gamepad.on('up', gamepadOnUp);
-    gamepad.on('down', gamepadOnDown);
+    gamepad.on('move', mapper.joystickMove.bind(mapper));
+    gamepad.on('up', mapper.buttonUp.bind(mapper));
+    gamepad.on('down', mapper.buttonDown.bind(mapper));
+
+    gamepad.on('move', (id, num, val) => {
+        if (num === 5)
+            botSocket.sendLEDTestData(-val);
+    });
+
+    // TODO this is here temporarily so we don't have to keep clicking the fucking connect button every time we re-deploy
+    await botSocket.connect(options);
+    await botSocket.startMagStream(17);
+    mapper.on('data', (direction, val) => {
+        // noinspection JSIgnoredPromiseFromCall
+        botSocket.sendControllerData(direction, val);
+    });
 
     // convert radians to degrees
     botSocket.on('magData', mag => {
@@ -119,8 +128,12 @@ async function main() {
 
         logger.i('dashboard', 'the dashboard awakens');
         socket.on('connectToBot', async () => {
-            await botSocket.connect(options);
-            await botSocket.startMagStream(17);
+            // await botSocket.connect(options);
+            // await botSocket.startMagStream(17);
+            // mapper.on('data', (direction, val) => {
+            //     // noinspection JSIgnoredPromiseFromCall
+            //     botSocket.sendControllerData(direction, val);
+            // })
         });
 
         socket.on('disconnectFromBot', async () => {
@@ -135,49 +148,6 @@ async function main() {
         _dashSocket = socket;
     });
 
-}
-
-const directionsMap = {
-    forwardBackward: 0,
-    turnYaw: 1,
-    pitch: 2,
-    strafe: 3,
-    depth: 4
-};
-let direction;
-const joystickMap = {
-    0: async (value) => {
-        direction = joystickButtons[0]
-            ? directionsMap.pitch
-            : directionsMap.forwardBackward;
-        console.log(direction, -value);
-        // await botSocket.sendControllerData(direction, -value)
-    },
-    1: async (value) => {
-        direction = joystickButtons[1]
-            ? directionsMap.strafe
-            : directionsMap.turnYaw;
-        console.log(direction, value)
-    },
-    5: async (value) => {
-        await botSocket.sendLEDTestData(-value);
-    }
-};
-
-const joystickButtons = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
-async function gamepadOnMove(id, axis, value) {
-    joystickMap[axis](value);
-}
-
-async function gamepadOnUp(id, num) {
-    joystickButtons[num] = 0;
-    logger.d('gamepad', joystickButtons);
-}
-
-async function gamepadOnDown(id, num) {
-    joystickButtons[num] = 1;
-    logger.d('gamepad', joystickButtons);
 }
 
 main().catch(error => console.error(error));

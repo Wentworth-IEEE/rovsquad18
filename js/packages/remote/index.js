@@ -56,6 +56,8 @@ const args = yargs
     .alias('h', 'help')
     .argv;
 
+if (args.local) args.debug = true;
+
 if (!args.local)
     i2cbus = require('i2c-bus');
 
@@ -85,21 +87,13 @@ if (!args.local)
         logger.i('PCA Init', 'PCA Initialized successfully');
     });
 
+pca.setDutyCycle(0, 0.5);
+
 //////////////////////////////
 // joystick & mapping stuff //
 //////////////////////////////
 
-const directionValues = [0, 0, 0, 0, 0];
-// maps motor values (rows) to joystick values (columns)
-const motorMapMatrix = [
-    // F/B, Turn, Pitch, Strafe, Depth
-    [1, 1, 0, 1, 0],    // LF
-    [1, -1, 0, -1, 0],  // RF
-    [1, 1, 0, -1, 0],   // LB
-    [1, -1, 0, 1, 0],   // RB
-    [0, 0, -1, 0, 1],   // F
-    [0, 0, 1, 0, 1]     // B
-];
+const directions = [0, 0, 0, 0, 0];
 // maps each motor position to its PWM channel
 const motorChannels = [ 3, 8, 2, 9, 1, 11 ];
 
@@ -146,7 +140,13 @@ function onServerConnection(client) {
 function onClientData(data) {
     data.toString().replace(/}{/g, '}|{').split('|').forEach(datum => {
         logger.d('message', `Hey I got this: ${datum}`);
-        datum = JSON.parse(datum);
+        try {
+            datum = JSON.parse(datum);
+        }
+        catch(error) {
+            logger.e('token parse', `couldn't parse this: ${datum}`);
+            datum = 'tokenerror';
+        }
         emitter.emit(datum.type, datum);
     })
 }
@@ -189,7 +189,7 @@ emitter.on(tokenTypes.ECHO, echo);
 emitter.on(tokenTypes.READMAG, readMag);
 emitter.on(tokenTypes.STARTMAGSTREAM, startMagStream);
 emitter.on(tokenTypes.STOPMAGSTREAM, stopMagStream);
-emitter.on(tokenTypes.CONTROLLERDATA, consumeControllerData);
+emitter.on(tokenTypes.CONTROLLERDATA, recieveControllerData);
 emitter.on(tokenTypes.LEDTEST, LEDTest);
 
 // respond with the same body as the request
@@ -242,29 +242,76 @@ function stopMagStream(data) {
     sendToken(response.stringify());
 }
 
-function consumeControllerData(data) {
-    if (args.debug) {
-        // do nothing if the server is running in debug mode
-        const response = new responseToken({no: 'NOBOI'}, data.headers.transactionID);
-        sendToken(response);
-        return;
-    }
-    directionValues[data.dir] = data.val;
-    setMotorValues();
-}
+// maps motor values (rows) to joystick values (columns)
+const motorMapMatrix = [
+    // F/B, Turn, Pitch, Strafe, Depth
+    [ 1,  1,  0,  1, 0 ], // LF
+    [ 1, -1,  0, -1, 0 ], // RF
+    [ 1,  1,  0, -1, 0 ], // LB
+    [ 1, -1,  0,  1, 0 ], // RB
+    [ 0,  0, -1,  0, 1 ], // F
+    [ 0,  0,  1,  0, 1 ]  // B
+];
 
-function setMotorValues() {
-    motorMapMatrix.map((row, rowIndex) => {
-        const channel = row.reduce((sum, dir, index) => sum + dir * directionValues[index], 0) / 2;
-        pca.setDutyCycle(motorChannels[rowIndex], channel)
+// applies the degree of freedom vectors to a matrix row
+const reducer = (sum, dir, index) => sum + dir * directions[index];
+/*
+ * return min if num is less than min
+ * return max if num is greater than max
+ * otherwise just return num
+ */
+const maxmin = (min, num, max) => Math.max(Math.min(num, max), min);
+// the number of turbines involved in vector drive
+const vectorTurbines = 4;
+
+function recieveControllerData(data) {
+    directions[data.body.dir] = data.body.val;
+    logger.d('directions', JSON.stringify(directions));
+
+    const motorValues = motorMapMatrix.map((row, rowIndex) => {
+        /*
+         * OK let me explain my math here:
+         *
+         * Each row in the matrix motorMapMatrix is a motor, and each column is a degree of freedom.
+         *
+         * With the reduce function we're applying the values of the 5 degrees of freedom to each row
+         * in the matrix, where each value represents weather the turbine represented by that row should
+         * go forwards or backwards based on the value of the degree of freedom in that column.
+         *
+         * Then we take that and divide it by the number of motors there are in the vector drive (4 in our case)
+         * so that no motor's value will never go over 1 or below -1.
+         *
+         * THEN we take that value and add 1 & divide by 2 so the number's range becomes [0 -> 1] instead of [-1 -> 1].
+         *
+         * FINALLY because sometimes the buttons hiccup and joystick-mapper adds more degrees of freedom together than
+         * it needs to, we make sure the value is no less than 0 and no more than 1.
+         *
+         * TODO I'd like to fix the last one if we have time.
+         */
+        const value = maxmin(0, (row.reduce(reducer, 0) / vectorTurbines) + 1 / 2, 1);
+        if (args.debug)
+            return value;
+
+        try {
+            pca.setDutyCycle(motorChannels[rowIndex], value);
+        }
+        catch (error) {
+            console.error(error);
+            console.log(`YOU GOT AN ERROR, BITCH: ${value} DON'T FUCKIN FLY`);
+        }
+        return value;
     });
+    logger.d('motor values', JSON.stringify(motorValues));
+
+    const response = new responseToken({}, data.headers.transactionID);
+    sendToken(response);
 }
 
 function LEDTest(data) {
-    const dutyCycle = (data.body + 1) / 2;
     if (args.debug)
         return;
 
+    const dutyCycle = (data.body + 1) / 2;
     [5, 6].map(channel => {
         logger.d('LEDTest', `${channel} ${dutyCycle}`);
         pca.setDutyCycle(channel, dutyCycle)
