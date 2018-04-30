@@ -13,7 +13,7 @@ const { nugLog } = require('nugget-logger');
 const botProtocol = require('botprotocol'), responseTypes = botProtocol.responseTypes;
 
 // set up logger
-const logger = new nugLog('info', 'botSocket.log');
+const logger = new nugLog('debug', 'botSocket.log');
 
 // emitter is used to emit responses from the robot with the event type being the response's transactionID.
 const emitter = new EventEmitter();
@@ -73,8 +73,13 @@ class botSocket extends EventEmitter {
          * sometimes data comes in all stuck together so we have to split it up
          */
         data.toString().replace(/}{/g, '}|{').split('|').forEach(datum => {
-            datum = JSON.parse(datum);
-            emitter.emit(datum.headers.transactionID, datum);
+            try {
+                datum = JSON.parse(datum);
+                emitter.emit(datum.headers.transactionID, datum);
+            }
+            catch (error) {
+                console.error(error);
+            }
         })
     }
 
@@ -105,19 +110,17 @@ class botSocket extends EventEmitter {
     /**
      * Send some arbitrary data to the robot, expect the same arbitrary data in return
      *
-     * @async
      * @param data - The arbitrary data to be echoed
      * @returns {Promise<*>} Resolves with the response from the robot
      */
-    async echo(data) {
+    echo(data) {
         const token = new botProtocol.echoToken(data);
-        return await this.sendToken(token);
+        return this.sendToken(token);
     }
 
     /**
      * Read the magnetometer values from the robot
      *
-     * @async
      * @returns {Promise<*>} Resolves with magnetometer values in the following format:
      * {
      *    heading,
@@ -125,45 +128,47 @@ class botSocket extends EventEmitter {
      *    roll
      * }
      */
-    async readMag() {
+    readMag() {
         const token = new botProtocol.readMagToken();
-        return await this.sendToken(token);
+        return this.sendToken(token);
     }
 
     /**
      * Tell the robot to start streaming magnetometer data at a certain frequency
      *
-     * @async
      * @param interval - The interval to stream at (time in ms between data being sent)
      * @returns {Promise<*>} Resolves when the robot ackgnowledges the request
      */
-    async startMagStream(interval) {
+    startMagStream(interval) {
         const token = new botProtocol.startMagStreamToken(interval);
-        return await this.sendToken(token);
+        return this.sendToken(token);
     }
 
     /**
      * Tell the robot to stop streaming magnetometer data
      *
-     * @async
      * @returns {Promise<*>} Resolves when the robot ackgnowledges the request
      */
-    async stopMagStream() {
+    stopMagStream() {
         const token = new botProtocol.stopMagStreamToken();
-        return await this.sendToken(token);
+        return this.sendToken(token);
     }
 
     /**
      * Send controller data to the robot
      * This one isn't completely implemented robot-side yet
      *
-     * @async
-     * @param controllerData - The controller data
+     * @param data - YER DATA U BITCH
      * @returns {Promise<*>} Resolves when the robot ackgnowledges and processes the request
      */
-    async sendControllerData(controllerData = {}) {
-        const token = new botProtocol.controllerDataToken(controllerData);
-        return await this.sendToken(token);
+    sendControllerData(data) {
+        const token = new botProtocol.controllerDataToken(data);
+        return this.sendToken(token);
+    }
+
+    sendLEDTestData(brightness) {
+        const token = new botProtocol.LEDTestToken(brightness);
+        return this.sendToken(token);
     }
 
     /**
@@ -173,10 +178,16 @@ class botSocket extends EventEmitter {
      * @returns {Promise<*>}
      */
     sendToken(token) {
+        if (!this._isConnected) {
+            logger.d('sendToken', 'YOU\'RE NOT CONNECTED YOU FUCKING BITCH');
+            return Promise.resolve();
+        }
+
         return new Promise(resolve => {
+            logger.d('sendToken', `sending it: ${JSON.stringify(token)}`);
             this._socket.write(token.stringify());
             emitter.once(token.headers.transactionID, data => {
-                resolve(data.body);
+                resolve(data);
             });
         });
     }

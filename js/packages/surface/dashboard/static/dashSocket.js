@@ -28,3 +28,4 @@ socket.on('readMag', data => {
     attitude.setRoll(data.roll);
     heading.setHeading(data.heading)
 });
+socket.on('motorData', console.log);
