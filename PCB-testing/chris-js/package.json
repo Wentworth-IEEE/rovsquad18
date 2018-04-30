@@ -1,0 +1,17 @@
+{
+  "name": "chris-js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "magnetometer-test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "i2c": "^0.2.3",
+    "i2c-bus": "^3.0.0",
+    "pca9685": "^4.0.3"
+  }
+}
