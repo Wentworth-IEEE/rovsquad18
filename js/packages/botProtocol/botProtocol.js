@@ -81,11 +81,8 @@ class stopMagStreamToken extends token {
  * }
  */
 class controllerDataToken extends token {
-    constructor(dir, val) {
-        super(tokenTypes.CONTROLLERDATA, {
-            dir: dir,
-            val: val
-        });
+    constructor(data) {
+        super(tokenTypes.CONTROLLERDATA, data);
     }
 }
 

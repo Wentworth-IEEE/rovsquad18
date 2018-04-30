@@ -8,14 +8,10 @@ const http = require('http');
 const yargs = require('yargs');
 const express = require('express');
 const io = require('socket.io');
-const gamepad = require('gamepad');
 const { nugLog } = require('nugget-logger');
 const Controller = require('controller');
 const BotSocket = require('botsocket');
 const JoystickMapper = require('joystick-mapper');
-
-gamepad.init();
-setInterval(gamepad.processEvents, 10);
 
 // set up logger
 const logger = new nugLog('debug', 'surface.log');
@@ -35,7 +31,7 @@ const args = yargs
         alias: 'pi-address',
         desc: 'connect to the robot at this address',
         type: 'string',
-        default: 'spacenugget.local',
+        default: 'hardboilednugget.local',
         nargs: 1
     })
     .alias('h', 'help')
@@ -72,7 +68,7 @@ const controller = new Controller();
 
 // botSocket!!!!
 const botSocket = new BotSocket();
-const mapper = new JoystickMapper();
+const mapper = new JoystickMapper(17);
 
 // socket.io stuff
 const app = express();
@@ -100,23 +96,6 @@ server.listen(dashPort, () => logger.i('dashboard', `dashboard running on localh
  */
 async function main() {
 
-    gamepad.on('move', mapper.joystickMove.bind(mapper));
-    gamepad.on('up', mapper.buttonUp.bind(mapper));
-    gamepad.on('down', mapper.buttonDown.bind(mapper));
-
-    gamepad.on('move', (id, num, val) => {
-        if (num === 5)
-            botSocket.sendLEDTestData(-val);
-    });
-
-    // TODO this is here temporarily so we don't have to keep clicking the fucking connect button every time we re-deploy
-    await botSocket.connect(options);
-    await botSocket.startMagStream(17);
-    mapper.on('data', (direction, val) => {
-        // noinspection JSIgnoredPromiseFromCall
-        botSocket.sendControllerData(direction, val);
-    });
-
     // convert radians to degrees
     botSocket.on('magData', mag => {
         Object.keys(mag).map(k => mag[k] *= 180 / Math.PI);
@@ -128,12 +107,11 @@ async function main() {
 
         logger.i('dashboard', 'the dashboard awakens');
         socket.on('connectToBot', async () => {
-            // await botSocket.connect(options);
+            await botSocket.connect(options);
             // await botSocket.startMagStream(17);
-            // mapper.on('data', (direction, val) => {
-            //     // noinspection JSIgnoredPromiseFromCall
-            //     botSocket.sendControllerData(direction, val);
-            // })
+            mapper.on('data', async data => {
+                _dashSocket.emit('motorData', (await botSocket.sendControllerData(data)).body);
+            });
         });
 
         socket.on('disconnectFromBot', async () => {
