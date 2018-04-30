@@ -14,8 +14,9 @@ class logger {
     /**
      * @param level - name (not index) of the level for this logger to be
      * @param logFilePath - file name/path for file to write logs to
+     * @param callback - a callback function for more readable code on initialization
      */
-    constructor(level, logFilePath = '') {
+    constructor(level, logFilePath = '', callback) {
         // make sure the level is between 0 and 5
         level = levels.indexOf(level.toUpperCase());
         if (level < 0 || level > levels.length - 1)
@@ -30,6 +31,8 @@ class logger {
             : this.logFile = {
                 write: () => {}
             };
+
+        callback();
     }
 
     print(label, message, level) {
