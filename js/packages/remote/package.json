@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "botprotocol": "file:../botProtocol",
+    "i2c-bus": "^3.1.0",
+    "mpu9250": "^0.1.9",
     "nugget-logger": "file:../nugget-logger",
     "pca9685": "^4.0.3",
     "yargs": "^11.0.0"

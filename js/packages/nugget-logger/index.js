@@ -20,7 +20,7 @@ class logger {
         // make sure the level is between 0 and 5
         level = levels.indexOf(level.toUpperCase());
         if (level < 0 || level > levels.length - 1)
-            throw 'level must be between 0 and 5 inclusice';
+            throw 'level must be between 0 and 5 inclusive';
 
         // this.level is set to a number instead of the actual name of the level
         // the number is the index of the level name in `levels`
