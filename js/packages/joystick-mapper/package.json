@@ -1,0 +1,11 @@
+{
+  "name": "joystick-mapper",
+  "version": "1.0.0",
+  "description": "for mapping joystick values to degrees of motion",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

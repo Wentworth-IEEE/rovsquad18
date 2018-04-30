@@ -11,9 +11,10 @@ const io = require('socket.io');
 const { nugLog } = require('nugget-logger');
 const Controller = require('controller');
 const BotSocket = require('botsocket');
+const JoystickMapper = require('joystick-mapper');
 
 // set up logger
-const logger = new nugLog('info', 'surface.log');
+const logger = new nugLog('debug', 'surface.log');
 
 // socket.io dashboard port
 const dashPort = 80;
@@ -30,7 +31,7 @@ const args = yargs
         alias: 'pi-address',
         desc: 'connect to the robot at this address',
         type: 'string',
-        default: 'spacenugget.local',
+        default: 'hardboilednugget.local',
         nargs: 1
     })
     .alias('h', 'help')
@@ -56,6 +57,7 @@ const dummySocket = {
     emit: () => {
         if (this.notified)
             return;
+
         logger.w('dashboard', 'dashboard disconnected WHAT HAVE YOU DONE OPEN IT BACK UP');
         this.notified = true;
     }
@@ -66,11 +68,13 @@ const controller = new Controller();
 
 // botSocket!!!!
 const botSocket = new BotSocket();
+const mapper = new JoystickMapper(17);
 
 // socket.io stuff
 const app = express();
 const server = http.Server(app);
 const dashboard = io(server);
+
 let _dashSocket = dummySocket;
 
 // express/webserver stuff
@@ -92,11 +96,6 @@ server.listen(dashPort, () => logger.i('dashboard', `dashboard running on localh
  */
 async function main() {
 
-    // this is commented out for now so we can focus on bot connection stuff
-    // await controller.init();
-    // controller.on('open', () => console.log('controller connected'));
-    controller.on('data', data => botSocket.sendControllerData(data));
-
     // convert radians to degrees
     botSocket.on('magData', mag => {
         Object.keys(mag).map(k => mag[k] *= 180 / Math.PI);
@@ -109,9 +108,10 @@ async function main() {
         logger.i('dashboard', 'the dashboard awakens');
         socket.on('connectToBot', async () => {
             await botSocket.connect(options);
-            await botSocket.startMagStream(17);
-            logger.d('send-controller-data', 'Sending empty controller data object!!');
-            await botSocket.sendControllerData();
+            // await botSocket.startMagStream(17);
+            mapper.on('data', async data => {
+                _dashSocket.emit('motorData', (await botSocket.sendControllerData(data)).body);
+            });
         });
 
         socket.on('disconnectFromBot', async () => {

@@ -16,21 +16,6 @@
 const net = require('net');
 const EventEmitter = require('events');
 const yargs = require('yargs');
-const { nugLog, levels } = require('nugget-logger');
-const { tokenTypes, responseTypes, responseToken } = require('botprotocol');
-const i2cbus = require('i2c-bus');
-const { Pca9685Driver } = require("pca9685");
-
-// if botServer wasn't spawned as a child process, make process.send do nothing
-process.send = process.send || function() {};
-// exit on any message from parent process (if it exists)
-process.on('message', process.exit);
-
-/*
- * if -d or --debug is specified as a command line argument
- * run server on 127.0.0.1 (localhost)
- * return all sensor calls with dummy data
- */
 const args = yargs
     .usage('Usage: $0 [options]')
     .version(false)
@@ -53,53 +38,89 @@ const args = yargs
     })
     .alias('h', 'help')
     .argv;
+if (args.local) args.debug = true;
 
-// set up logger
-const logger = new nugLog(args.logLevel, 'remote.log');
-console.log(`logging at level ${args.logLevel}`);
-
-if (args.debug) logger.i('startup', 'running in debug mode');
+const i2cbus = args.debug ? require('i2c-bus') : { openSync: () => 69 };
+const { nugLog, levels } = require('nugget-logger');
+const { tokenTypes, responseTypes, responseToken } = require('botprotocol');
+const { Pca9685Driver } = require("pca9685");
 
 // global constants
-const address = args.local ? '127.0.0.1' : '0.0.0.0';
-const port = 8080;
-const emitter = new EventEmitter();
-const pca = new Pca9685Driver({
-    i2c: i2cbus.openSync(1),
-    address: 0x40,
-    frequency: 50,
-    debug: false
-}, error => {
-    if (error) {
-        logger.e('PCA Init', 'wow some serious shit happened trying to initialize the PCA. here\'s some more on that:\n');
-        throw error;
-    }
-    logger.i('PCA Init', 'PCA Initialized successfully');
+const hostAddress = '0.0.0.0';
+const hostPort = 8080;
+const motorChannels = [
+    // maps each motor position to its PWM channel
+    3,  // LF
+    8,  // RF
+    2,  // LB
+    9,  // RB
+    1,  // F
+    11, // B
+    5,  // LED1
+    6   // LED2
+];
+const motorMapMatrix = [
+   // F/B, Turn, Strafe, Pitch, Depth
+    [ 1,  1,  1,  0, 0 ], // LF
+    [ 1, -1, -1,  0, 0 ], // RF
+    [ 1,  1, -1,  0, 0 ], // LB
+    [ 1, -1,  1,  0, 0 ], // RB
+    [ 0,  0,  0, -1, 1 ], // F
+    [ 0,  0,  0,  1, 1 ]  // B
+];
+// # of turbines in the vector drive
+const vectorTurbines = 4;
+
+// set up logger
+const logger = new nugLog(args.logLevel, 'remote.log', () => {
+    console.log(`logging at level ${args.logLevel}`)
 });
+if (args.debug) logger.i('startup', 'running in debug mode');
+const tokenTypeEmitter = new EventEmitter();
+const pca = args.debug ? undefined : new Pca9685Driver({
+        i2c: i2cbus.openSync(1),
+        address: 0x40,
+        frequency: 300,
+        debug: false
+    }, error => {
+        if (error) {
+            logger.e('PCA Init', 'wow some serious shit happened trying to initialize the PCA. here\'s some more on that:\n');
+            throw error;
+        }
+        logger.i('PCA Init', 'PCA Initialized successfully');
+        motorChannels.map(channel => pca.setDutyCycle(channel, 0.5));
+    });
 
 // global not-constants
 let _client;
 let _magInterval;
+
+// exit on any message from parent process (if it exists)
+process.on('message', process.exit);
 
 //////////////////////////////////
 // server logic & listener shit //
 //////////////////////////////////
 
 const server = net.createServer();
-server.listen({
-    host: address,
-    port: port,
-    exclusive: true
-});
-
 server.on('listening', onServerListening);
 server.on('error', onServerError);
 server.on('connection', onServerConnection);
+server.listen({
+    host: hostAddress,
+    port: hostPort,
+    exclusive: true
+});
 
 // listening listener (heh)
 function onServerListening() {
-    logger.i('listening', `server is listening at ${address}:${port}`);
-    process.send('listening');
+    logger.i('listening', `server is listening at ${hostAddress}:${hostPort}`);
+    try {
+        process.send('listening');
+    }
+    catch(error) {
+        logger.v('listening', 'process was not spawned as a child process')
+    }
 }
 
 // error listener
@@ -118,9 +139,17 @@ function onServerConnection(client) {
 }
 
 function onClientData(data) {
-    logger.d('message', `Hey I got this: ${data}`);
-    data = JSON.parse(data);
-    emitter.emit(data.type, data);
+    data.toString().replace(/}{/g, '}|{').split('|').forEach(datum => {
+        logger.d('message', `Hey I got this: ${datum}`);
+        try {
+            datum = JSON.parse(datum);
+        }
+        catch(error) {
+            logger.e('token parse', `couldn't parse this: ${datum}`);
+            datum = 'tokenerror';
+        }
+        tokenTypeEmitter.emit(datum.type, datum);
+    })
 }
 
 function onClientDisconnect() {
@@ -157,11 +186,12 @@ function onClientError(error) {
  * 'type' as the event name and with the whole token itself as the callback parameter.
  * The token is recieved as a string and is parsed to an object before it is emitted.
  */
-emitter.on(tokenTypes.ECHO, echo);
-emitter.on(tokenTypes.READMAG, readMag);
-emitter.on(tokenTypes.STARTMAGSTREAM, startMagStream);
-emitter.on(tokenTypes.STOPMAGSTREAM, stopMagStream);
-emitter.on(tokenTypes.CONTROLLERDATA, consumeControllerData);
+tokenTypeEmitter.on(tokenTypes.ECHO, echo);
+tokenTypeEmitter.on(tokenTypes.READMAG, readMag);
+tokenTypeEmitter.on(tokenTypes.STARTMAGSTREAM, startMagStream);
+tokenTypeEmitter.on(tokenTypes.STOPMAGSTREAM, stopMagStream);
+tokenTypeEmitter.on(tokenTypes.CONTROLLERDATA, recieveControllerData);
+tokenTypeEmitter.on(tokenTypes.LEDTEST, LEDTest);
 
 // respond with the same body as the request
 function echo(data) {
@@ -213,74 +243,59 @@ function stopMagStream(data) {
     sendToken(response.stringify());
 }
 
-function joystickMap(i) {
-    // Turn the range of values from the controller (-1 to 1) into
-    // a PWM-friendly range (0.0... to 1.0)
-    return (i+1)/2;
+/**
+ * Maps degrees of freedom to motor values and sends the motor values in the body of a response token.
+ * @param data - token recieved from the surface
+ */
+function recieveControllerData(data) {
+    const motorValues = motorMapMatrix.map((row, rowIndex) => {
+        /*
+         * OK let me explain my math here:
+         *
+         * Each row in the matrix motorMapMatrix is a motor, and each column is a degree of freedom.
+         *
+         * With the reduce function we're applying the values of the 5 degrees of freedom to each row
+         * in the matrix, where each value represents weather the turbine represented by that row should
+         * go forwards or backwards based on the value of the degree of freedom in that column.
+         *
+         * Then we take that and divide it by the number of motors there are in the vector drive (4 in our case)
+         * so that no motor's value will never go over 1 or below -1.
+         *
+         * THEN we take that value and add 1 & divide by 2 so the number's range becomes [0 -> 1] instead of [-1 -> 1].
+         *
+         * FINALLY because sometimes the buttons hiccup and joystick-mapper adds more degrees of freedom together than
+         * it needs to, we set the duty cycle in a try/catch.
+         *
+         * TODO I'd like to fix the last one if we have time, it's really a nitpicky thing though.
+         */
+        const value = (row.reduce((sum, dir, index) => sum + dir * data.body[index], 0) / vectorTurbines) + 1 / 2;
+        if (args.debug)
+            return value;
+
+        try {
+            pca.setDutyCycle(motorChannels[rowIndex], value);
+        }
+        catch (error) {
+            console.error(error);
+            console.log(`YOU GOT AN ERROR, BITCH: ${value} DON'T FUCKIN FLY`);
+        }
+        return value;
+    });
+    logger.d('motor values', JSON.stringify(motorValues));
+
+    const response = new responseToken(motorValues, data.headers.transactionID);
+    sendToken(response);
 }
 
-function consumeControllerData(data) {
-    if (args.debug) {
-        // do nothing if the server is running in debug mode
-        const response = new responseToken({}, data.headers.transactionID);
-        sendToken(response);
+function LEDTest(data) {
+    if (args.debug)
         return;
-    }
-    // If we got here, we're not in debug mode!
-    logger.d('PCA-debug', 'Setting PCA values.');
-    logger.d('PCA-debug', data);
-    
-    // Joystick info here comes out in the following order:
-    // [forwards, strafe, pitch, yaw, claw, elevate]
-    let joystick = data.joysticks;
 
-    // These arrays represent directions of thrusters to achieve certain movements.
-    // Arrays are in the order [F, LF, RF, B, LB, RB]
-    let f_arr = [ 0,  1,  1,  0,  1,  1]; // forwards (front is positive)
-    let s_arr = [ 0,  1, -1,  0, -1,  1]; // strafe (right is positive)
-    let y_arr = [ 0,  1, -1,  0,  1, -1]; // yaw (clockwise is positive)
-    let e_arr = [ 1,  0,  0,  1,  0,  0]; // elevate (up is positive)
-    let p_arr = [ 1,  0,  0, -1,  0,  0]; // pitch (pitch up is positive)
-
-    let setpoint = [0,0,0,0,0,0];
-
-    for(let i = 0; i < 6; i++) {
-        setpoint[i] += joystickMap(joystick[0])*f_arr[i];
-        setpoint[i] += joystickMap(joystick[1])*s_arr[i];
-        setpoint[i] += joystickMap(joystick[3])*y_arr[i];
-        setpoint[i] += joystickMap(joystick[5])*e_arr[i];
-        setpoint[i] += joystickMap(joystick[2])*p_arr[i];
-    }
-    
-    let max_e = Math.abs(Math.max(setpoint[0], setpoint[3]));
-    if(max_e > 1) {
-        setpoint[0] /= max_e;
-        setpoint[3] /= max_e;
-    }
-
-    let max_l = Math.abs(Math.max(setpoint[1], setpoint[2], setpoint[4], setpoint[5]));
-    if(max_l > 1) {
-        setpoint[1] /= max_l;
-        setpoint[2] /= max_l;
-        setpoint[4] /= max_l;
-        setpoint[5] /= max_l;
-    }
-
-    if(Math.abs(setpoint[0])-slack < 0)
-        setpoint[0] = stabilize_f();
-
-    if(Math.abs(setpoint[1])-slack < 0))
-        setpoint[1] = stabilize_lf();
-
-    if(Math.abs(setpoint[2]
-
-    // The hardware location of the PWM isn't 0-5, so a final translation happens here.
-    pwm.setDutyCycle(1,  setpoint[1]); // Front
-    pwm.setDutyCycle(2,  setpoint[4]); // Left Back
-    pwm.setDutyCycle(3,  setpoint[1]); // Left Front
-    pwm.setDutyCycle(8,  setpoint[2]); // Right Front
-    pwm.setDutyCycle(9,  setpoint[5]); // Right Back
-    pwm.setDutyCycle(11, setpoint[3]); // Back
+    const dutyCycle = (data.body + 1) / 2;
+    [5, 6].map(channel => {
+        logger.d('LEDTest', `${channel} ${dutyCycle}`);
+        pca.setDutyCycle(channel, dutyCycle);
+    });
 }
 
 function sendToken(token) {

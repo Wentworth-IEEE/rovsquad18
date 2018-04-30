@@ -32,7 +32,7 @@ const { scp } = require('scp2');
 const remoteExec = require('remote-exec');
 
 // look for the pi here!
-const defaultPiAddress = 'spacenugget.local';
+const defaultPiAddress = 'hardboilednugget.local';
 
 const args = yargs
     .usage('Usage: $0 [options]')
@@ -92,11 +92,11 @@ async function setupRobot(args) {
 
 const spawnRobotLocalDebug = () => new Promise(resolve => {
     // spawn the robot as a child process, resolve when the robot is done setting up.
-    const botArgs = ['--local', '--debug', '--log-level', 'DEBUG'];
+    const botArgs = ['--local', '--debug', '--log-level', 'INFO'];
     console.log('Starting robot in local and debug mode');
 
     const forkOptions = {
-        execArgv: ['--inspect'],
+        execArgv: ['--inspect=0.0.0.0:8779'],
         stdio: ['pipe', 'pipe', 'pipe', 'ipc']
     };
     const child = fork(__dirname + remotePackageLocation, botArgs, forkOptions).on('message', () => {
@@ -124,7 +124,7 @@ const copyFilesToRobot = args => new Promise(resolve => {
 const restartRobot = args => new Promise(resolve => {
     // restart nugget daemon, resolve when complete
     console.log('Restarting server remotely');
-    remoteExec(args.piAddress, `service nugget ${args.daemonAction}`, {
+    remoteExec(args.piAddress, `systemctl restart nugget`, {
         username: 'root',
         password: 'spacenugget',
         readyTimeout: 99000
