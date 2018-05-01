@@ -30,7 +30,7 @@ int pos = 90;
 
 void setup()
 {
-  //Serial.begin(9600);
+  Serial.begin(9600);
   pinMode(input,INPUT);
   pinMode(13, OUTPUT);
   digitalWrite(13, LOW);
@@ -78,6 +78,7 @@ void loop(){
             buff = (buff<<1)|0x1;                               //fill next element in buffer
             if(buff == 0xFFF){                                   //if tone 2 is heard for 800ms, set tone2 to true
               got_freq[2]=1;
+              //Serial.println("------------------------------------1 3-----------------------------------");
               claw();
               digitalWrite(13, HIGH);
               delay(100);
@@ -168,7 +169,7 @@ void loop(){
 
 //function to control servo
 void claw(){
- pos *= toggle; 
+ pos =pos*toggle; 
  Serial.println(pos);
  servo.write(pos);
 }
@@ -193,6 +194,5 @@ void reset()
     got_freq[i]=0;
   }
 }
-
 
 
