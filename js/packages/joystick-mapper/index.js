@@ -21,8 +21,16 @@ module.exports = class extends EventEmitter {
             0, // strafe
             0, // pitch
             0, // depth
-            0, // man nip
             0  // LEDs
+        ];
+
+        const controlMatrix = [
+          //  A   1   2   3   4   5   B   1   2   3   4   5   6   7   8   9   10  11
+            [-1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 ],
+            [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 ],
+            [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 ],
+            [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 ],
+            [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 ]
         ];
 
         gamepad.on('down', (id, num) => this.buttonDown(id, num));
@@ -55,8 +63,7 @@ module.exports = class extends EventEmitter {
              this.axes[1] *  this.buttons[1] * !this.buttons[0], // strafe
             -this.axes[0] *  this.buttons[0] * !this.buttons[1], // pitch
             -this.axes[5] *  this.buttons[3] * !this.buttons[2] || this.directions[4], // depth
-            -this.axes[3], // man nips
-            -this.axes[5] *  this.buttons[2] * !this.buttons[3] || this.directions[5]  // LEDs
+            -this.axes[5] *  this.buttons[2] * !this.buttons[3] || this.directions[5], // LEDs
         ];
         if (arrEquals(newVals, this.directions))
             return;

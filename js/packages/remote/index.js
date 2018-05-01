@@ -55,17 +55,17 @@ const motorChannels = [
     9,  // RB
     1,  // F
     11, // B
-    0   // man nip
+    5,  // LED1
+    6   // LED2
 ];
 const motorMapMatrix = [
-   // F/B, Turn, Strafe, Pitch, Depth, ManNips
-    [ 1,  1,  1,  0, 0,   0 ], // LF
-    [ 1, -1, -1,  0, 0,   0 ], // RF
-    [ 1,  1, -1,  0, 0,   0 ], // LB
-    [ 1, -1,  1,  0, 0,   0 ], // RB
-    [ 0,  0,  0, -1, 1,   0 ], // F
-    [ 0,  0,  0,  1, 1,   0 ], // B
-    [ 0,  0,  0,  0, 0, 2/5 ]  // man nip
+   // F/B, Turn, Strafe, Pitch, Depth
+    [ 1,  1,  1,  0,   0 ], // LF
+    [ 1, -1, -1,  0,   0 ], // RF
+    [ 1,  1, -1,  0,   0 ], // LB
+    [ 1, -1,  1,  0,   0 ], // RB
+    [ 0,  0,  0, -1,   1 ], // F
+    [ 0,  0,  0,  1, 2/5 ], // B
 ];
 // # of turbines in the vector drive
 const vectorTurbines = 4;
