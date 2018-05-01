@@ -16,6 +16,9 @@
 const net = require('net');
 const EventEmitter = require('events');
 const yargs = require('yargs');
+const { nugLog, levels } = require('nugget-logger');
+const { tokenTypes, responseTypes, responseToken } = require('botprotocol');
+const { Pca9685Driver } = require("pca9685");
 const args = yargs
     .usage('Usage: $0 [options]')
     .version(false)
@@ -39,11 +42,7 @@ const args = yargs
     .alias('h', 'help')
     .argv;
 if (args.local) args.debug = true;
-
-const i2cbus = args.debug ? require('i2c-bus') : { openSync: () => 69 };
-const { nugLog, levels } = require('nugget-logger');
-const { tokenTypes, responseTypes, responseToken } = require('botprotocol');
-const { Pca9685Driver } = require("pca9685");
+const i2cbus = args.debug ? { openSync: () => 69 } : require('i2c-bus');
 
 // global constants
 const hostAddress = '0.0.0.0';
@@ -56,17 +55,17 @@ const motorChannels = [
     9,  // RB
     1,  // F
     11, // B
-    5,  // LED1
-    6   // LED2
+    0   // man nip
 ];
 const motorMapMatrix = [
-   // F/B, Turn, Strafe, Pitch, Depth
-    [ 1,  1,  1,  0, 0 ], // LF
-    [ 1, -1, -1,  0, 0 ], // RF
-    [ 1,  1, -1,  0, 0 ], // LB
-    [ 1, -1,  1,  0, 0 ], // RB
-    [ 0,  0,  0, -1, 1 ], // F
-    [ 0,  0,  0,  1, 1 ]  // B
+   // F/B, Turn, Strafe, Pitch, Depth, ManNips
+    [ 1,  1,  1,  0, 0,   0 ], // LF
+    [ 1, -1, -1,  0, 0,   0 ], // RF
+    [ 1,  1, -1,  0, 0,   0 ], // LB
+    [ 1, -1,  1,  0, 0,   0 ], // RB
+    [ 0,  0,  0, -1, 1,   0 ], // F
+    [ 0,  0,  0,  1, 1,   0 ], // B
+    [ 0,  0,  0,  0, 0, 2/5 ]  // man nip
 ];
 // # of turbines in the vector drive
 const vectorTurbines = 4;
@@ -88,7 +87,10 @@ const pca = args.debug ? undefined : new Pca9685Driver({
             throw error;
         }
         logger.i('PCA Init', 'PCA Initialized successfully');
-        motorChannels.map(channel => pca.setDutyCycle(channel, 0.5));
+        motorChannels.map(channel => {
+            pca.setDutyCycle(channel, 0);
+            pca.setDutyCycle(channel, 0.5);
+        });
     });
 
 // global not-constants
