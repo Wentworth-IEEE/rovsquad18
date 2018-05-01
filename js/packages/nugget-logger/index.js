@@ -32,7 +32,7 @@ class logger {
                 write: () => {}
             };
 
-        callback();
+        // callback();
     }
 
     print(label, message, level) {
