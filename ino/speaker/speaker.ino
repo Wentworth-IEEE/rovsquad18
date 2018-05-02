@@ -37,8 +37,9 @@ void loop() {
       tone(tone_pin, tone_open_a[i]);
       delay(del);
       noTone(tone_pin);
-      delay(del*2);
+      delay(del);
     }
+    delay(del);
   }
   else if(close_a==1 && close_a_old==0){
     for(int i=0; i<n; i++){
@@ -46,8 +47,9 @@ void loop() {
       tone(tone_pin, tone_close_a[i]);
       delay(del);
       noTone(tone_pin);
-      delay(del*2);
+      delay(del);
     }
+    delay(del);
   }
   else if(open_b==1 && open_b_old==0){
     for(int i=0; i<4; i++){
