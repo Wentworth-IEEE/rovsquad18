@@ -55,17 +55,17 @@ const motorChannels = [
     9,  // RB
     1,  // F
     11, // B
-    5,  // LED1
-    6   // LED2
 ];
+const manipulatorChannel = 0;
+const LEDChannels = [5, 6];
 const motorMapMatrix = [
    // F/B, Turn, Strafe, Pitch, Depth
-    [ 1,  1,  1,  0,   0 ], // LF
-    [ 1, -1, -1,  0,   0 ], // RF
-    [ 1,  1, -1,  0,   0 ], // LB
-    [ 1, -1,  1,  0,   0 ], // RB
-    [ 0,  0,  0, -1,   1 ], // F
-    [ 0,  0,  0,  1, 2/5 ], // B
+    [ 1,  1,  1,  0, 0 ], // LF
+    [ 1, -1, -1,  0, 0 ], // RF
+    [ 1,  1, -1,  0, 0 ], // LB
+    [ 1, -1,  1,  0, 0 ], // RB
+    [ 0,  0,  0, -1, 1 ], // F
+    [ 0,  0,  0,  1, 1 ], // B
 ];
 // # of turbines in the vector drive
 const vectorTurbines = 4;
@@ -156,11 +156,6 @@ function onClientData(data) {
 
 function onClientDisconnect() {
     logger.i('connection', 'client disconnected');
-    /*
-     * TODO:
-     * should this interval be cleared here when the client disconnects
-     * or explicitly as a command from the surface when it disconnects or both?
-     */
     clearInterval(_magInterval);
     _client = null;
 }
@@ -192,8 +187,8 @@ tokenTypeEmitter.on(tokenTypes.ECHO, echo);
 tokenTypeEmitter.on(tokenTypes.READMAG, readMag);
 tokenTypeEmitter.on(tokenTypes.STARTMAGSTREAM, startMagStream);
 tokenTypeEmitter.on(tokenTypes.STOPMAGSTREAM, stopMagStream);
-tokenTypeEmitter.on(tokenTypes.CONTROLLERDATA, recieveControllerData);
-tokenTypeEmitter.on(tokenTypes.LEDTEST, LEDTest);
+tokenTypeEmitter.on(tokenTypes.CONTROLLERDATA, setMotors);
+tokenTypeEmitter.on(tokenTypes.LEDTEST, setLEDBrightness);
 
 // respond with the same body as the request
 function echo(data) {
@@ -249,7 +244,7 @@ function stopMagStream(data) {
  * Maps degrees of freedom to motor values and sends the motor values in the body of a response token.
  * @param data - token recieved from the surface
  */
-function recieveControllerData(data) {
+function setMotors(data) {
     const motorValues = motorMapMatrix.map((row, rowIndex) => {
         /*
          * OK let me explain my math here:
@@ -258,7 +253,7 @@ function recieveControllerData(data) {
          *
          * With the reduce function we're applying the values of the 5 degrees of freedom to each row
          * in the matrix, where each value represents weather the turbine represented by that row should
-         * go forwards or backwards based on the value of the degree of freedom in that column.
+         * go forwards or backwards based on the value of the degr.ee of freedom in that column.
          *
          * Then we take that and divide it by the number of motors there are in the vector drive (4 in our case)
          * so that no motor's value will never go over 1 or below -1.
@@ -289,12 +284,12 @@ function recieveControllerData(data) {
     sendToken(response);
 }
 
-function LEDTest(data) {
+function setLEDBrightness(data) {
     if (args.debug)
         return;
 
     const dutyCycle = (data.body + 1) / 2;
-    [5, 6].map(channel => {
+    LEDChannels.map(channel => {
         logger.d('LEDTest', `${channel} ${dutyCycle}`);
         pca.setDutyCycle(channel, dutyCycle);
     });
