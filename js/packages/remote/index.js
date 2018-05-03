@@ -60,12 +60,12 @@ const motorChannels = [
 ];
 const motorMapMatrix = [
    // F/B, Turn, Strafe, Pitch, Depth
-    [ 1,  1,  1,  0,   0 ], // LF
-    [ 1, -1, -1,  0,   0 ], // RF
-    [ 1,  1, -1,  0,   0 ], // LB
-    [ 1, -1,  1,  0,   0 ], // RB
-    [ 0,  0,  0, -1,   1 ], // F
-    [ 0,  0,  0,  1, 2/5 ], // B
+    [ 1,  1,  1,  0, 0 ], // LF
+    [ 1, -1, -1,  0, 0 ], // RF
+    [ 1,  1, -1,  0, 0 ], // LB
+    [ 1, -1,  1,  0, 0 ], // RB
+    [ 0,  0,  0, -1, 1 ], // F
+    [ 0,  0,  0,  1, 1 ], // B
 ];
 // # of turbines in the vector drive
 const vectorTurbines = 4;
