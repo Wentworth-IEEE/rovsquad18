@@ -7,7 +7,7 @@
     "test": "mocha packages/*/test/*",
     "bootstrap": "lerna bootstrap",
     "deploy": "node packages/deploy",
-    "surface": "node packages/surface"
+    "surface": "electron packages/surface"
   },
   "author": "Nugget Industries",
   "license": "ISC",

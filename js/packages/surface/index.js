@@ -7,18 +7,16 @@
 const http = require('http');
 const yargs = require('yargs');
 const express = require('express');
+// const { app, BrowserWindow } = require('electron');
+const path = require('path');
+const url = require('url');
 const io = require('socket.io');
 const { nugLog } = require('nugget-logger');
-const Controller = require('controller');
 const BotSocket = require('botsocket');
 const JoystickMapper = require('joystick-mapper');
 
 // set up logger
 const logger = new nugLog('debug', 'surface.log');
-
-// socket.io dashboard port
-const dashPort = 80;
-
 const args = yargs
     .usage('Usage: $0 [options]')
     .version(false)
@@ -63,9 +61,6 @@ const dummySocket = {
     }
 };
 
-// controller!
-const controller = new Controller();
-
 // botSocket!!!!
 const botSocket = new BotSocket();
 const mapper = new JoystickMapper(17);
@@ -76,16 +71,25 @@ const server = http.Server(app);
 const dashboard = io(server);
 
 let _dashSocket = dummySocket;
+let win;
+/*
+app.on('ready', () => {
+    win = new BrowserWindow({
+        width: 800,
+        height: 600
+    });
 
-// express/webserver stuff
-app.use('/static', express.static(__dirname + '/dashboard/static'));
-app.locals.pretty = true;
+    win.loadURL(url.format({
+        pathname: path.join(__dirname, 'dashboard', 'index.html'),
+        protocol: 'file:',
+        slashes: true
+    }));
 
-// GET renderer
-app.get('/', (request, response) => response.sendFile(__dirname + '/dashboard/index.html'));
-
-// http server shit
-server.listen(dashPort, () => logger.i('dashboard', `dashboard running on localhost:${dashPort}`));
+    win.on('close', () => {
+        win = null;
+    })
+});
+*/
 
 /*
  * 1. controller
