@@ -5,10 +5,10 @@ const i2cbus = require('i2c-bus');
 
 // TODO- make an import for both this file and the remote/index.js I snagged this from
 // That way they share stuff
-const pcs = new Pca9685Driver({
+const pca = new Pca9685Driver({
     i2c: i2cbus.openSync(1),
     address: 0x40,
-    frequency: 50,
+    frequency: 300,
     debug: false
 }, error => {
     if (error) {
