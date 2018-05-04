@@ -19,6 +19,8 @@ const yargs = require('yargs');
 const { nugLog, levels } = require('nugget-logger');
 const { tokenTypes, responseTypes, responseToken } = require('bot-protocol');
 const { Pca9685Driver } = require("pca9685");
+const util = require('util');
+const fs = require('fs');
 const args = yargs
     .usage('Usage: $0 [options]')
     .version(false)
@@ -43,7 +45,6 @@ const args = yargs
     .argv;
 if (args.local) args.debug = true;
 const i2cbus = args.debug ? { openSync: () => 69 } : require('i2c-bus');
-
 // global constants
 const hostAddress = '0.0.0.0';
 const hostPort = 8080;
@@ -284,9 +285,15 @@ function setMotors(data) {
  * Respond with Pi's CPU temp in degrees Celcius
  * @param data
  */
-function readPiTemp(data) {
+async function readPiTemp(data) {
     // TODO SEND TEMP HERE
-    sendToken(new responseToken('6 bajillion degrees', data.headers.transactionID));
+    if (args.debug)
+        return sendToken(new responseToken('6 bajillion degrees', data.headers.transactionID));
+
+    sendToken(new responseToken(
+        (await util.promisify(fs.readFile)('/sys/class/thermal/thermal_zone0/temp', 'utf8'))/1000,
+        data.headers.transactionID)
+    );
 }
 
 /**
