@@ -109,19 +109,14 @@ class botSocket extends EventEmitter {
 
     /**
      * Send some arbitrary data to the robot, expect the same arbitrary data in return
-     *
      * @param data - The arbitrary data to be echoed
-     * @returns {Promise<*>} Resolves with the response from the robot
+     * @returns {Promise<*>}
      */
-    echo(data) {
-        const token = new botProtocol.echoToken(data);
-        return this.sendToken(token);
-    }
+    echo(data) { return this.sendToken(botProtocol.echoToken(data)); }
 
     /**
      * Read the magnetometer values from the robot
-     *
-     * @returns {Promise<*>} Resolves with magnetometer values in the following format:
+     * @returns {Promise<*>}
      * {
      *    heading,
      *    pitch,
@@ -129,46 +124,67 @@ class botSocket extends EventEmitter {
      * }
      */
     readMag() {
-        const token = new botProtocol.readMagToken();
-        return this.sendToken(token);
+        return this.sendToken(botProtocol.readMagToken());
     }
 
     /**
      * Tell the robot to start streaming magnetometer data at a certain frequency
-     *
      * @param interval - The interval to stream at (time in ms between data being sent)
-     * @returns {Promise<*>} Resolves when the robot ackgnowledges the request
+     * @returns {Promise<*>}
      */
     startMagStream(interval) {
-        const token = new botProtocol.startMagStreamToken(interval);
-        return this.sendToken(token);
+        return this.sendToken(botProtocol.startMagStreamToken(interval));
     }
 
     /**
      * Tell the robot to stop streaming magnetometer data
-     *
-     * @returns {Promise<*>} Resolves when the robot ackgnowledges the request
+     * @returns {Promise<*>}
      */
     stopMagStream() {
-        const token = new botProtocol.stopMagStreamToken();
-        return this.sendToken(token);
+        return this.sendToken(botProtocol.stopMagStreamToken());
     }
 
     /**
      * Send controller data to the robot
-     * This one isn't completely implemented robot-side yet
-     *
      * @param data - YER DATA U BITCH
-     * @returns {Promise<*>} Resolves when the robot ackgnowledges and processes the request
+     * @returns {Promise<*>} - Resolves with the robot's motor values as pulse length per motor in microseconds
      */
     sendControllerData(data) {
-        const token = new botProtocol.controllerDataToken(data);
-        return this.sendToken(token);
+        return this.sendToken(botProtocol.controllerDataToken(data));
     }
 
+    /**
+     * Gets the pi's CPU temperature in degrees Celcius
+     * @returns {Promise<*>} - resolves with temperature
+     */
+    readPiTemp() {
+        return this.sendToken(botProtocol.readPiTempToken());
+    }
+
+    /**
+     * Tells the robot to send the pi's CPU temeperature every ${interval} ms
+     * @param interval - time in ms between robot sending temperature
+     * @returns {Promise<*>}
+     */
+    startPiTempStream(interval) {
+        return this.sendToken(botProtocol.startPiTempStreamToken(interval));
+    }
+
+    /**
+     * Tells the robot to stop streaming temperature data
+     * @returns {Promise<*>}
+     */
+    stopPiTempStream() {
+        return this.sendToken(botProtocol.stopPiTempStreamToken());
+    }
+
+    /**
+     * FUNK OUTTA HERE
+     * @param brightness
+     * @returns {Promise<*>}
+     */
     sendLEDTestData(brightness) {
-        const token = new botProtocol.LEDTestToken(brightness);
-        return this.sendToken(token);
+        return this.sendToken(botProtocol.LEDTestToken(brightness));
     }
 
     /**

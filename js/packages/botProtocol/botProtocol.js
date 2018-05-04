@@ -10,27 +10,30 @@
 const uuidv1 = require('uuid/v1');
 
 // ye olde ghetto JS enum
-const tokenTypes = {
+export const tokenTypes = {
     RESPONSE: 'response',
     ECHO: 'echo',
     READMAG: 'readMag',
     STARTMAGSTREAM: 'startMagStream',
     STOPMAGSTREAM: 'stopMagStream',
     CONTROLLERDATA: 'controllerData',
+    READPITEMP: 'readPiTemp',
+    STARTPITEMPSTREAM: 'startPiTempStream',
+    STOPPITEMPSTREAM: 'stopPiTempStream',
     LEDTEST: 'LEDTest'
 };
-const responseTypes = {
+export const responseTypes = {
     MAGDATA: 'magData'
 };
 
 // all tokens should extend this class
 class token {
-    constructor(type, body, transactionID = uuidv1()) {
+    constructor(type, body = undefined, transactionID = uuidv1()) {
         this.type = type;
         this.headers = {
             transactionID: transactionID // so we can keep track of this mothafucka
         };
-        this.body = body;
+        if (body) this.body = body;
     }
 
     stringify() {
@@ -39,68 +42,69 @@ class token {
 }
 
 // RESPONSE TOKEN
-class responseToken extends token {
+export class responseToken extends token {
     constructor(body, transactionID) {
         super(tokenTypes.RESPONSE, body, transactionID);
     }
 }
 
 // ECHO TOKEN
-class echoToken extends token {
+export class echoToken extends token {
     constructor(body) {
         super(tokenTypes.ECHO, body);
     }
 }
 
 // READ MAG TOKEN
-class readMagToken extends token {
+export class readMagToken extends token {
     constructor() {
-        super(tokenTypes.READMAG, {});
+        super(tokenTypes.READMAG);
     }
 }
 
 // START MAG STREAM TOKEN
-class startMagStreamToken extends token {
+export class startMagStreamToken extends token {
     constructor(interval) {
+        // TODO there's no need for an object here, just send the interval as the only thing in the body
         super(tokenTypes.STARTMAGSTREAM, { interval: interval });
     }
 }
 
 // STOP MAG STREAM TOKEN
-class stopMagStreamToken extends token {
+export class stopMagStreamToken extends token {
     constructor() {
-        super(tokenTypes.STOPMAGSTREAM, {});
+        super(tokenTypes.STOPMAGSTREAM);
     }
 }
 
 // CONTROLLER DATA TOKEN
-/*
- * {
- *   num: integer
- *   val: float
- * }
- */
-class controllerDataToken extends token {
+export class controllerDataToken extends token {
     constructor(data) {
         super(tokenTypes.CONTROLLERDATA, data);
     }
 }
 
-class LEDTestToken extends token {
+// READ PI TEMP TOKEN
+export class readPiTempToken extends token {
+    constructor() {
+        super(tokenTypes.READPITEMP);
+    }
+}
+
+export class startPiTempStreamToken extends token {
+    constructor(interval) {
+        super(tokenTypes.STARTPITEMPSTREAM, interval);
+    }
+}
+
+export class stopPiTempStreamToken extends token {
+    constructor() {
+        super(tokenTypes.STOPPITEMPSTREAM);
+    }
+}
+
+export class LEDTestToken extends token {
     constructor(brightness) {
         super(tokenTypes.LEDTEST, brightness);
     }
 }
-
-module.exports = {
-    tokenTypes: tokenTypes,
-    responseTypes: responseTypes,
-    // actual tokens
-    responseToken: responseToken,
-    echoToken: echoToken,
-    readMagToken: readMagToken,
-    startMagStreamToken: startMagStreamToken,
-    stopMagStreamToken: stopMagStreamToken,
-    controllerDataToken: controllerDataToken,
-    LEDTestToken: LEDTestToken
-};
