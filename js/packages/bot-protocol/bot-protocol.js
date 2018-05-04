@@ -10,7 +10,7 @@
 const uuidv1 = require('uuid/v1');
 
 // ye olde ghetto JS enum
-export const tokenTypes = {
+const tokenTypes = {
     RESPONSE: 'response',
     ECHO: 'echo',
     READMAG: 'readMag',
@@ -22,8 +22,10 @@ export const tokenTypes = {
     STOPPITEMPSTREAM: 'stopPiTempStream',
     LEDTEST: 'LEDTest'
 };
-export const responseTypes = {
-    MAGDATA: 'magData'
+exports.tokenTypes = tokenTypes;
+exports.responseTypes = {
+    MAGDATA: 'magData',
+    PITEMPDATA: 'piTempData'
 };
 
 // all tokens should extend this class
@@ -42,69 +44,69 @@ class token {
 }
 
 // RESPONSE TOKEN
-export class responseToken extends token {
+exports.responseToken = class extends token {
     constructor(body, transactionID) {
         super(tokenTypes.RESPONSE, body, transactionID);
     }
-}
+};
 
 // ECHO TOKEN
-export class echoToken extends token {
+exports.echoToken = class extends token {
     constructor(body) {
         super(tokenTypes.ECHO, body);
     }
-}
+};
 
 // READ MAG TOKEN
-export class readMagToken extends token {
+exports.readMagToken = class extends token {
     constructor() {
         super(tokenTypes.READMAG);
     }
-}
+};
 
 // START MAG STREAM TOKEN
-export class startMagStreamToken extends token {
+exports.startMagStreamToken = class extends token {
     constructor(interval) {
         // TODO there's no need for an object here, just send the interval as the only thing in the body
         super(tokenTypes.STARTMAGSTREAM, { interval: interval });
     }
-}
+};
 
 // STOP MAG STREAM TOKEN
-export class stopMagStreamToken extends token {
+exports.stopMagStreamToken = class extends token {
     constructor() {
         super(tokenTypes.STOPMAGSTREAM);
     }
-}
+};
 
 // CONTROLLER DATA TOKEN
-export class controllerDataToken extends token {
+exports.controllerDataToken = class extends token {
     constructor(data) {
         super(tokenTypes.CONTROLLERDATA, data);
     }
-}
+};
 
 // READ PI TEMP TOKEN
-export class readPiTempToken extends token {
+exports.readPiTempToken = class extends token {
     constructor() {
         super(tokenTypes.READPITEMP);
     }
-}
+};
 
-export class startPiTempStreamToken extends token {
+exports.startPiTempStreamToken = class extends token {
     constructor(interval) {
         super(tokenTypes.STARTPITEMPSTREAM, interval);
     }
-}
+};
 
-export class stopPiTempStreamToken extends token {
+exports.stopPiTempStreamToken = class extends token {
     constructor() {
         super(tokenTypes.STOPPITEMPSTREAM);
     }
-}
+};
 
-export class LEDTestToken extends token {
+exports.LEDTestToken = class extends token {
     constructor(brightness) {
         super(tokenTypes.LEDTEST, brightness);
     }
-}
+};

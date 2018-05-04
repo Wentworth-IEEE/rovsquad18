@@ -9,8 +9,7 @@ const yargs = require('yargs');
 const express = require('express');
 const io = require('socket.io');
 const { nugLog } = require('nugget-logger');
-const Controller = require('controller');
-const BotSocket = require('botsocket');
+const BotSocket = require('bot-socket');
 const JoystickMapper = require('joystick-mapper');
 
 // set up logger
@@ -63,10 +62,7 @@ const dummySocket = {
     }
 };
 
-// controller!
-const controller = new Controller();
-
-// botSocket!!!!
+// BotSocket!!!!
 const botSocket = new BotSocket();
 const mapper = new JoystickMapper(17);
 
@@ -92,7 +88,7 @@ server.listen(dashPort, () => logger.i('dashboard', `dashboard running on localh
  * 2. app (express)
  * 3. server
  * 4. dashSocket
- * 5. botSocket
+ * 5. BotSocket
  */
 async function main() {
 
@@ -108,7 +104,8 @@ async function main() {
         logger.i('dashboard', 'the dashboard awakens');
         socket.on('connectToBot', async () => {
             await botSocket.connect(options);
-            // await botSocket.startMagStream(17);
+            await botSocket.startPiTempStream(500);
+            botSocket.on('piTempData', console.log);
             mapper.on('data', async data => {
                 _dashSocket.emit('motorData', (await botSocket.sendControllerData(data)).body);
             });

@@ -10,7 +10,8 @@
 const net = require('net');
 const EventEmitter = require('events');
 const { nugLog } = require('nugget-logger');
-const botProtocol = require('botprotocol'), responseTypes = botProtocol.responseTypes;
+const botProtocol = require('bot-protocol');
+const { responseTypes } = botProtocol;
 
 // set up logger
 const logger = new nugLog('debug', 'botSocket.log');
@@ -18,15 +19,14 @@ const logger = new nugLog('debug', 'botSocket.log');
 // emitter is used to emit responses from the robot with the event type being the response's transactionID.
 const emitter = new EventEmitter();
 
-class botSocket extends EventEmitter {
+module.exports = class extends EventEmitter {
 
     constructor() {
         super();
         // set up magData event listener
         // is this the right place to set this up? only time will tell...
-        emitter.on(responseTypes.MAGDATA, data => {
-            this.emit('magData', data.body);
-        });
+        emitter.on(responseTypes.MAGDATA, data => this.emit('magData', data.body));
+        emitter.on(responseTypes.PITEMPDATA, data => this.emit('piTempData', data.body));
     }
 
     async connect(options) {
@@ -112,7 +112,9 @@ class botSocket extends EventEmitter {
      * @param data - The arbitrary data to be echoed
      * @returns {Promise<*>}
      */
-    echo(data) { return this.sendToken(botProtocol.echoToken(data)); }
+    echo(data) {
+        return this.sendToken(new botProtocol.echoToken(data));
+    }
 
     /**
      * Read the magnetometer values from the robot
@@ -124,7 +126,7 @@ class botSocket extends EventEmitter {
      * }
      */
     readMag() {
-        return this.sendToken(botProtocol.readMagToken());
+        return this.sendToken(new botProtocol.readMagToken());
     }
 
     /**
@@ -133,7 +135,7 @@ class botSocket extends EventEmitter {
      * @returns {Promise<*>}
      */
     startMagStream(interval) {
-        return this.sendToken(botProtocol.startMagStreamToken(interval));
+        return this.sendToken(new botProtocol.startMagStreamToken(interval));
     }
 
     /**
@@ -141,7 +143,7 @@ class botSocket extends EventEmitter {
      * @returns {Promise<*>}
      */
     stopMagStream() {
-        return this.sendToken(botProtocol.stopMagStreamToken());
+        return this.sendToken(new botProtocol.stopMagStreamToken());
     }
 
     /**
@@ -150,7 +152,7 @@ class botSocket extends EventEmitter {
      * @returns {Promise<*>} - Resolves with the robot's motor values as pulse length per motor in microseconds
      */
     sendControllerData(data) {
-        return this.sendToken(botProtocol.controllerDataToken(data));
+        return this.sendToken(new botProtocol.controllerDataToken(data));
     }
 
     /**
@@ -158,7 +160,7 @@ class botSocket extends EventEmitter {
      * @returns {Promise<*>} - resolves with temperature
      */
     readPiTemp() {
-        return this.sendToken(botProtocol.readPiTempToken());
+        return this.sendToken(new botProtocol.readPiTempToken());
     }
 
     /**
@@ -167,7 +169,7 @@ class botSocket extends EventEmitter {
      * @returns {Promise<*>}
      */
     startPiTempStream(interval) {
-        return this.sendToken(botProtocol.startPiTempStreamToken(interval));
+        return this.sendToken(new botProtocol.startPiTempStreamToken(interval));
     }
 
     /**
@@ -175,7 +177,7 @@ class botSocket extends EventEmitter {
      * @returns {Promise<*>}
      */
     stopPiTempStream() {
-        return this.sendToken(botProtocol.stopPiTempStreamToken());
+        return this.sendToken(new botProtocol.stopPiTempStreamToken());
     }
 
     /**
@@ -184,7 +186,7 @@ class botSocket extends EventEmitter {
      * @returns {Promise<*>}
      */
     sendLEDTestData(brightness) {
-        return this.sendToken(botProtocol.LEDTestToken(brightness));
+        return this.sendToken(new botProtocol.LEDTestToken(brightness));
     }
 
     /**
@@ -209,5 +211,3 @@ class botSocket extends EventEmitter {
     }
 
 }
-
-module.exports = botSocket;
