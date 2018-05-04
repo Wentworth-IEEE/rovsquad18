@@ -23,7 +23,8 @@ export const tokenTypes = {
     LEDTEST: 'LEDTest'
 };
 export const responseTypes = {
-    MAGDATA: 'magData'
+    MAGDATA: 'magData',
+    PITEMP: 'piTemp'
 };
 
 // all tokens should extend this class

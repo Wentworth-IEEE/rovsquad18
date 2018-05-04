@@ -43,7 +43,7 @@ const args = yargs
     .argv;
 if (args.local) args.debug = true;
 const i2cbus = args.debug ? { openSync: () => 69 } : require('i2c-bus');
-
+const fs = require('fs'); // For file reading stuff
 // global constants
 const hostAddress = '0.0.0.0';
 const hostPort = 8080;
@@ -96,6 +96,7 @@ const pca = args.debug ? undefined : new Pca9685Driver({
 // global not-constants
 let _client;
 let _magInterval;
+let _piTempInterval;
 
 // exit on any message from parent process (if it exists)
 process.on('message', process.exit);
@@ -192,6 +193,8 @@ tokenTypeEmitter.on(tokenTypes.ECHO, echo);
 tokenTypeEmitter.on(tokenTypes.READMAG, readMag);
 tokenTypeEmitter.on(tokenTypes.STARTMAGSTREAM, startMagStream);
 tokenTypeEmitter.on(tokenTypes.STOPMAGSTREAM, stopMagStream);
+tokenTypeEmiiter.on(tokenTypes.STARTPITEMPSTREAM, startPiTempStream);
+tokenTypeEmitter.on(tokenTypes.STOPPPITEMPSTREAM, stopPiTempStream);
 tokenTypeEmitter.on(tokenTypes.CONTROLLERDATA, recieveControllerData);
 tokenTypeEmitter.on(tokenTypes.LEDTEST, LEDTest);
 
@@ -305,4 +308,59 @@ function sendToken(token) {
     // this can crash the script if too much is being logged
     logger.d('message', 'sending it: ' + token.stringify());
     _client.write(token.stringify());
+}
+
+function readPiTemp(data) {
+    // if we're in debug mode, send back random values from 30 to 70 degrees.
+    if (args.debug) {
+        const response = new responseToken({
+            piTemp = Math.random() * (70-30)+30
+        }, data.headers.transactionID);
+        sendToken(response);
+        return;
+    }
+    const response = new responseToken({
+        piTemp = returnPiTemp()
+    }, data.headers.transactionID);
+    sendToken(response);
+}
+
+function startPiTempStream(data) {
+    clearInterval(_piTempInterval);
+    /*
+     * DummyToken is used as a fake token to pass to the readPiTempStream function.
+     * Since readPiTempStream only ever looks at the token's transactionID, we can
+     * trick it into sending a response token with the a pre-determined
+     * transactionID. The surface station will then emit an event of that
+     * pre-determined type, and we can handle that event knowing that it's
+     * a response from the readPiTempStream..
+     *
+     * (Modified from 'startMagStream'
+     */
+    const dummyToken = {
+        headers: {
+            transactionID: responseTypes.PITEMP
+        }
+    };
+    _piTempInterval = setInterval(readPiTemp, data.body.interval, dummyToken);
+
+    const response = new responseToken({}, data.headers.transactionID);
+    sendToken(response);
+}
+
+function stopMagStream(data) {
+    clearInterval(_piTempInterval);
+
+    const response = new responseToken({}, data.headers.transactionID);
+    sendToken(response.stringify());
+}
+
+
+function returnPiTemp() {
+    fs.readFile('/sys/class/thermal/thermal_zone0/temp', 'utf8', function (err,data) {
+      if (err) {
+        return console.log(err);
+      }
+      return data/1000;
+    });
 }
