@@ -1,15 +1,15 @@
 {
-  "name": "botsocket",
+  "name": "bot-socket",
   "version": "1.0.0",
   "description": "API for talking to the bot",
-  "main": "botSocket.js",
+  "main": "bot-socket.js",
   "scripts": {
     "test": "mocha test"
   },
   "author": "Nugget Industries",
   "license": "ISC",
   "dependencies": {
-    "botprotocol": "file:../botProtocol",
+    "bot-protocol": "file:../bot-protocol",
     "nugget-logger": "file:../nugget-logger"
   },
   "devDependencies": {
