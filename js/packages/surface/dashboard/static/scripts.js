@@ -1,6 +1,6 @@
 const socket = io.connect('http://localhost');
 const imgDirectory = '/static/lib/indicators/img/';
-let attitude, heading;
+let attitude, heading, motors;
 // set up all the indicators
 $(document).ready(() => {
     attitude = $.flightIndicator('#attitude', 'attitude', {
@@ -13,6 +13,7 @@ $(document).ready(() => {
         showBox: false,
         img_directory: imgDirectory
     });
+    motors = [ $('#LF'), $('#RF'), $('#LB'), $('#RB'), $('#F'), $('#B') ];
     // do some button listeners
     $('#connect').click(() => {
         socket.emit('connectToBot')
@@ -22,10 +23,10 @@ $(document).ready(() => {
     });
 });
 // ye olde socket listeners
-socket.on('readMag', data => {
-    console.log(data);
+socket.on('magData', data => {
     attitude.setPitch(data.pitch);
     attitude.setRoll(data.roll);
     heading.setHeading(data.heading)
 });
-socket.on('motorData', console.log);
+socket.on('piTempData', data => $('#piTemp').val(data));
+socket.on('motorData', data => data.map((value, index) => motors[index].val((value - 1550) / 400)));
