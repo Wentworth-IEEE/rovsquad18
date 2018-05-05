@@ -67,6 +67,19 @@ const motorMapMatrix = [
     [ 0,  0,  0, -1,   1 ], // F
     [ 0,  0,  0,  1, 2/5 ], // B
 ];
+let lastValMatrix = [
+   // F/B, Turn, Strafe, Pitch, Depth
+    [ 0, 0, 0, 0, 0 ], // LF
+    [ 0, 0, 0, 0, 0 ], // RF
+    [ 0, 0, 0, 0, 0 ], // LB
+    [ 0, 0, 0, 0, 0 ], // RB
+    [ 0, 0, 0, 0, 0 ], // F
+    [ 0, 0, 0, 0, 0 ], // B
+];
+
+let prevLinear     = [0,0,0];
+let prevRotational = [0,0,0];
+
 // # of turbines in the vector drive
 const vectorTurbines = 4;
 
@@ -250,7 +263,6 @@ function stopMagStream(data) {
  * @param data - token recieved from the surface
  */
 function recieveControllerData(data) {
-    const motorValues = motorMapMatrix.map((row, rowIndex) => {
         /*
          * OK let me explain my math here:
          *
@@ -270,6 +282,7 @@ function recieveControllerData(data) {
          *
          * TODO I'd like to fix the last one if we have time, it's really a nitpicky thing though.
          */
+    const motorValues = motorMapMatrix.map((row, rowIndex) => {
         const value = (row.reduce((sum, dir, index) => sum + dir * data.body[index], 0) / vectorTurbines) + 1 / 2;
         if (args.debug)
             return value;
@@ -287,6 +300,52 @@ function recieveControllerData(data) {
 
     const response = new responseToken(motorValues, data.headers.transactionID);
     sendToken(response);
+}
+
+
+// Because of the way the board is laid out, 'x' isn't actually 'x', 'roll' isn't actually 'roll', 
+// and so on. These functions act as sort-of 'wrappers' for those things.
+function getYaw() {
+    return 0;
+}
+
+function getPitch() {
+    return 0;
+}
+
+function getFB() {
+    return 0;
+}
+
+function getUD() {
+    return 0;
+}
+
+function getLinearMeasurements() {
+    return [0,0,0];
+}
+
+function getRotationalMeasurements() {
+    return [0,0];
+}
+
+function controlLoopify(data) {
+    // If zero values for degrees of freedom, set an interval until Ok conditions pop up again-
+    // either values are right, or we're trying to move.
+    let nowLinearMovement = [0,0,0];
+    nowLinearMovement = getLinearMeasurements();
+    let nowRotationalMovement = [0,0];
+    nowRotationalMovement = getRotationalMeasurements();
+
+    let linearVelocity = nowLinearMovement - prevLinear;
+    let rotationalVelocity = nowRotationalMovement - prevRotational;
+    
+    let okLinearRange = 5;
+    let okRotationalRange = 5;
+    
+    // If the value for a range of motion isn't (about) zero, and the user wants it to be,
+    // corrective action needs to be taken. That corrective action is a PI- a summation of 
+    // proportional and integral values. Derivative values may need to be added later. 
 }
 
 function LEDTest(data) {
