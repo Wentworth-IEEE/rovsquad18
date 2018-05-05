@@ -93,9 +93,12 @@ server.listen(dashPort, () => logger.i('dashboard', `dashboard running on localh
 async function main() {
 
     // convert radians to degrees
-    botSocket.on('magData', mag => {
-        Object.keys(mag).map(k => mag[k] *= 180 / Math.PI);
-        _dashSocket.emit('readMag', mag);
+    botSocket.on('magData', data => {
+        Object.keys(data).map(k => data[k] *= 180 / Math.PI);
+        _dashSocket.emit('magData', data);
+    });
+    botSocket.on('piTempData', data => {
+        _dashSocket.emit('piTempData', data);
     });
 
     // set us up some dashboard listeners
@@ -104,8 +107,7 @@ async function main() {
         logger.i('dashboard', 'the dashboard awakens');
         socket.on('connectToBot', async () => {
             await botSocket.connect(options);
-            await botSocket.startPiTempStream(500);
-            botSocket.on('piTempData', console.log);
+            await botSocket.startPiTempStream(1000);
             mapper.on('data', async data => {
                 _dashSocket.emit('motorData', (await botSocket.sendControllerData(data)).body);
             });
