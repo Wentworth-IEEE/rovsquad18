@@ -269,7 +269,27 @@ function disableControlLoop() {
 }
 
 function motorMatrixMath(joystickVals) {
+    //  setpoint = [F/B, Yaw, Strafe, Pitch, Depth]
     let setpoint = [0,0,0,0,0,0];
+    for(let i=0; i<6; i++) {
+        setpoint[i] = joystickVals[i] * motorMapMatrix[i];// TODO: fix me <3
+    }
+
+    let max_e = Math.abs(Math.max(setpoint[4], setpoint[5]));
+    if(max_e > 1) {
+        setpoint[4] /= max_e;
+        setpoint[5] /= max_e;
+    }
+
+    let max_l = Math.abs(Math.max(setpoint[0], setpoint[1], setpoint[2], setpoint[3]));
+    if(max_l > 1) {
+        for(let i = 0; i < 4; i++) {
+            setpoint[i] /= max_l;
+        }
+    }
+
+    return setpoint;
+
 }
 
 /**
@@ -277,25 +297,6 @@ function motorMatrixMath(joystickVals) {
  * @param data - token recieved from the surface
  */
 function recieveControllerData(data) {
-        /*
-         * OK let me explain my math here:
-         *
-         * Each row in the matrix motorMapMatrix is a motor, and each column is a degree of freedom.
-         *
-         * With the reduce function we're applying the values of the 5 degrees of freedom to each row
-         * in the matrix, where each value represents weather the turbine represented by that row should
-         * go forwards or backwards based on the value of the degree of freedom in that column.
-         *
-         * Then we take that and divide it by the number of motors there are in the vector drive (4 in our case)
-         * so that no motor's value will never go over 1 or below -1.
-         *
-         * THEN we take that value and add 1 & divide by 2 so the number's range becomes [0 -> 1] instead of [-1 -> 1].
-         *
-         * FINALLY because sometimes the buttons hiccup and joystick-mapper adds more degrees of freedom together than
-         * it needs to, we set the duty cycle in a try/catch.
-         *
-         * TODO I'd like to fix the last one if we have time, it's really a nitpicky thing though.
-         */
     // If doLoop is true, do the control loop. Otherwise, use raw controller data.
     const values = (SHOULD_DO_CONTROL_LOOP) ? controlLoopify(data.body) : motorMatrixMath(data.body);
     for(let rowIndex=0; rowIndex < 5; rowIndex++) {
@@ -303,7 +304,7 @@ function recieveControllerData(data) {
             return values;
 
         try {
-            pca.setDutyCycle(motorChannels[rowIndex], values[rowIndex]); // TODO- fix me! rowindex is gone now.
+            pca.setDutyCycle(motorChannels[rowIndex], values[rowIndex]);
         }
         catch (error) {
             console.error(error);
