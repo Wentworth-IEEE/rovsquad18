@@ -17,10 +17,8 @@ const net = require('net');
 const EventEmitter = require('events');
 const yargs = require('yargs');
 const { nugLog, levels } = require('nugget-logger');
-const { tokenTypes, responseTypes, responseToken } = require('bot-protocol');
+const { tokenTypes, responseTypes, responseToken } = require('botprotocol');
 const { Pca9685Driver } = require("pca9685");
-const util = require('util');
-const fs = require('fs');
 const args = yargs
     .usage('Usage: $0 [options]')
     .version(false)
@@ -45,6 +43,7 @@ const args = yargs
     .argv;
 if (args.local) args.debug = true;
 const i2cbus = args.debug ? { openSync: () => 69 } : require('i2c-bus');
+
 // global constants
 const hostAddress = '0.0.0.0';
 const hostPort = 8080;
@@ -56,21 +55,33 @@ const motorChannels = [
     9,  // RB
     1,  // F
     11, // B
+    5,  // LED1
+    6   // LED2
 ];
-const manipulatorChannel = 0;
-const LEDChannels = [5, 6];
 const motorMapMatrix = [
-    // F/B, Turn, Strafe, Pitch, Depth
-    [ 1,  1,  1,  0, 0 ], // LF
-    [ 1, -1, -1,  0, 0 ], // RF
-    [ 1,  1, -1,  0, 0 ], // LB
-    [ 1, -1,  1,  0, 0 ], // RB
-    [ 0,  0,  0, -1, 1 ], // F
-    [ 0,  0,  0,  1, 1 ], // B
+   // F/B, Turn, Strafe, Pitch, Depth
+    [ 1,  1,  1,  0,   0 ], // LF
+    [ 1, -1, -1,  0,   0 ], // RF
+    [ 1,  1, -1,  0,   0 ], // LB
+    [ 1, -1,  1,  0,   0 ], // RB
+    [ 0,  0,  0, -1,   1 ], // F
+    [ 0,  0,  0,  1, 2/5 ], // B
 ];
+let lastValMatrix = [
+   // F/B, Turn, Strafe, Pitch, Depth
+    [ 0, 0, 0, 0, 0 ], // LF
+    [ 0, 0, 0, 0, 0 ], // RF
+    [ 0, 0, 0, 0, 0 ], // LB
+    [ 0, 0, 0, 0, 0 ], // RB
+    [ 0, 0, 0, 0, 0 ], // F
+    [ 0, 0, 0, 0, 0 ], // B
+];
+
+let prevLinear     = [0,0,0];
+let prevRotational = [0,0,0];
+
 // # of turbines in the vector drive
-const vectorTurbines = 2;
-const intervals = {};
+const vectorTurbines = 4;
 
 // set up logger
 const logger = new nugLog(args.logLevel, 'remote.log', () => {
@@ -79,24 +90,25 @@ const logger = new nugLog(args.logLevel, 'remote.log', () => {
 if (args.debug) logger.i('startup', 'running in debug mode');
 const tokenTypeEmitter = new EventEmitter();
 const pca = args.debug ? undefined : new Pca9685Driver({
-    i2c: i2cbus.openSync(1),
-    address: 0x40,
-    frequency: 50,
-    debug: false
-}, error => {
-    if (error) {
-        logger.e('PCA Init', 'wow some serious shit happened trying to initialize the PCA. here\'s some more on that:\n');
-        throw error;
-    }
-    logger.i('PCA Init', 'PCA Initialized successfully');
-    motorChannels.map(async channel => {
-        console.log(`setting channel ${channel} to 1550us`);
-        pca.setPulseLength(channel, 1550);
+        i2c: i2cbus.openSync(1),
+        address: 0x40,
+        frequency: 300,
+        debug: false
+    }, error => {
+        if (error) {
+            logger.e('PCA Init', 'wow some serious shit happened trying to initialize the PCA. here\'s some more on that:\n');
+            throw error;
+        }
+        logger.i('PCA Init', 'PCA Initialized successfully');
+        motorChannels.map(channel => {
+            pca.setDutyCycle(channel, 0);
+            pca.setDutyCycle(channel, 0.5);
+        });
     });
-});
 
 // global not-constants
 let _client;
+let _magInterval;
 
 // exit on any message from parent process (if it exists)
 process.on('message', process.exit);
@@ -157,7 +169,12 @@ function onClientData(data) {
 
 function onClientDisconnect() {
     logger.i('connection', 'client disconnected');
-    Object.values(intervals).map(interval => clearInterval(interval));
+    /*
+     * TODO:
+     * should this interval be cleared here when the client disconnects
+     * or explicitly as a command from the surface when it disconnects or both?
+     */
+    clearInterval(_magInterval);
     _client = null;
 }
 
@@ -188,11 +205,8 @@ tokenTypeEmitter.on(tokenTypes.ECHO, echo);
 tokenTypeEmitter.on(tokenTypes.READMAG, readMag);
 tokenTypeEmitter.on(tokenTypes.STARTMAGSTREAM, startMagStream);
 tokenTypeEmitter.on(tokenTypes.STOPMAGSTREAM, stopMagStream);
-tokenTypeEmitter.on(tokenTypes.CONTROLLERDATA, setMotors);
-tokenTypeEmitter.on(tokenTypes.READPITEMP, readPiTemp);
-tokenTypeEmitter.on(tokenTypes.STARTPITEMPSTREAM, startPiTempStream);
-tokenTypeEmitter.on(tokenTypes.STOPPITEMPSTREAM, stopPiTempStream);
-tokenTypeEmitter.on(tokenTypes.LEDTEST, setLEDBrightness);
+tokenTypeEmitter.on(tokenTypes.CONTROLLERDATA, recieveControllerData);
+tokenTypeEmitter.on(tokenTypes.LEDTEST, LEDTest);
 
 // respond with the same body as the request
 function echo(data) {
@@ -215,34 +229,40 @@ function readMag(data) {
 }
 
 function startMagStream(data) {
-    clearInterval(intervals['mag']);
+    clearInterval(_magInterval);
     /*
-     * The third setInterval parameter is used as a fake token to pass to the readMag function.
+     * DummyToken is used as a fake token to pass to the readMag function.
      * Since readMag only ever looks at the token's transactionID, we can
      * trick it into sending a response token with the a pre-determined
      * transactionID. The surface station will then emit an event of that
      * pre-determined type, and we can handle that event knowing that it's
      * a response from the magStream.
      */
-    intervals['mag'] = setInterval(readMag, data.body.interval, {
+    const dummyToken = {
         headers: {
             transactionID: responseTypes.MAGDATA
         }
-    });
-    sendToken(new responseToken({}, data.headers.transactionID));
+    };
+    // set up the ol' interval
+    _magInterval = setInterval(readMag, data.body.interval, dummyToken);
+
+    // respond anyway cuz they all do that
+    const response = new responseToken({}, data.headers.transactionID);
+    sendToken(response);
 }
 
 function stopMagStream(data) {
-    clearInterval(intervals['mag']);
-    sendToken(new responseToken({}, data.headers.transactionID));
+    clearInterval(_magInterval);
+
+    const response = new responseToken({}, data.headers.transactionID);
+    sendToken(response.stringify());
 }
 
 /**
  * Maps degrees of freedom to motor values and sends the motor values in the body of a response token.
  * @param data - token recieved from the surface
  */
-function setMotors(data) {
-    const motorValues = motorMapMatrix.map((row, rowIndex) => {
+function recieveControllerData(data) {
         /*
          * OK let me explain my math here:
          *
@@ -250,7 +270,7 @@ function setMotors(data) {
          *
          * With the reduce function we're applying the values of the 5 degrees of freedom to each row
          * in the matrix, where each value represents weather the turbine represented by that row should
-         * go forwards or backwards based on the value of the degr.ee of freedom in that column.
+         * go forwards or backwards based on the value of the degree of freedom in that column.
          *
          * Then we take that and divide it by the number of motors there are in the vector drive (4 in our case)
          * so that no motor's value will never go over 1 or below -1.
@@ -262,12 +282,13 @@ function setMotors(data) {
          *
          * TODO I'd like to fix the last one if we have time, it's really a nitpicky thing though.
          */
-        const value = (row.reduce((sum, dir, index) => sum + dir * data.body[index], 0) / vectorTurbines) * 400 + 1550;
+    const motorValues = motorMapMatrix.map((row, rowIndex) => {
+        const value = (row.reduce((sum, dir, index) => sum + dir * data.body[index], 0) / vectorTurbines) + 1 / 2;
         if (args.debug)
             return value;
 
         try {
-            pca.setPulseLength(motorChannels[rowIndex], value);
+            pca.setDutyCycle(motorChannels[rowIndex], value);
         }
         catch (error) {
             console.error(error);
@@ -281,49 +302,58 @@ function setMotors(data) {
     sendToken(response);
 }
 
-/**
- * Respond with Pi's CPU temp in degrees Celcius
- * @param data
- */
-async function readPiTemp(data) {
-    // TODO SEND TEMP HERE
-    if (args.debug)
-        return sendToken(new responseToken('6 bajillion degrees', data.headers.transactionID));
 
-    sendToken(new responseToken(
-        (await util.promisify(fs.readFile)('/sys/class/thermal/thermal_zone0/temp', 'utf8'))/1000,
-        data.headers.transactionID)
-    );
+// Because of the way the board is laid out, 'x' isn't actually 'x', 'roll' isn't actually 'roll', 
+// and so on. These functions act as sort-of 'wrappers' for those things.
+function getYaw() {
+    return 0;
 }
 
-/**
- * Start streaming Pi CPU temp at the interval sent as data.body
- * @param data
- */
-function startPiTempStream(data) {
-    intervals['piTemp'] = setInterval(readPiTemp, data.body, {
-        headers: {
-            transactionID: responseTypes.PITEMPDATA
-        }
-    });
-    sendToken(new responseToken({}, data.headers.transactionID));
+function getPitch() {
+    return 0;
 }
 
-/**
- * Stop streaming Pi CPU temp data to the surface
- * @param data
- */
-function stopPiTempStream(data) {
-    clearInterval(intervals['piTemp']);
-    sendToken(new responseToken({}, data.headers.transactionID));
+function getFB() {
+    return 0;
 }
 
-function setLEDBrightness(data) {
+function getUD() {
+    return 0;
+}
+
+function getLinearMeasurements() {
+    return [0,0,0];
+}
+
+function getRotationalMeasurements() {
+    return [0,0];
+}
+
+function controlLoopify(data) {
+    // If zero values for degrees of freedom, set an interval until Ok conditions pop up again-
+    // either values are right, or we're trying to move.
+    let nowLinearMovement = [0,0,0];
+    nowLinearMovement = getLinearMeasurements();
+    let nowRotationalMovement = [0,0];
+    nowRotationalMovement = getRotationalMeasurements();
+
+    let linearVelocity = nowLinearMovement - prevLinear;
+    let rotationalVelocity = nowRotationalMovement - prevRotational;
+    
+    let okLinearRange = 5;
+    let okRotationalRange = 5;
+    
+    // If the value for a range of motion isn't (about) zero, and the user wants it to be,
+    // corrective action needs to be taken. That corrective action is a PI- a summation of 
+    // proportional and integral values. Derivative values may need to be added later. 
+}
+
+function LEDTest(data) {
     if (args.debug)
         return;
 
     const dutyCycle = (data.body + 1) / 2;
-    LEDChannels.map(channel => {
+    [5, 6].map(channel => {
         logger.d('LEDTest', `${channel} ${dutyCycle}`);
         pca.setDutyCycle(channel, dutyCycle);
     });
