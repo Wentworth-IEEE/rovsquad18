@@ -67,6 +67,8 @@ const motorMapMatrix = [
     [ 0,  0,  0, -1,   1 ], // F
     [ 0,  0,  0,  1, 2/5 ], // B
 ];
+
+let SHOULD_DO_CONTROL_LOOP = false; // Should we be doing the control loop? Defaults to false.
 let lastValMatrix = [
    // F/B, Turn, Strafe, Pitch, Depth
     [ 0, 0, 0, 0, 0 ], // LF
@@ -258,6 +260,18 @@ function stopMagStream(data) {
     sendToken(response.stringify());
 }
 
+function enableControlLoop() {
+    SHOULD_DO_CONTROL_LOOP = true;
+}
+
+function disableControlLoop() {
+    SHOULD_DO_CONTROL_LOOP = false;
+}
+
+function motorMatrixMath(joystickVals) {
+    let setpoint = [0,0,0,0,0,0];
+}
+
 /**
  * Maps degrees of freedom to motor values and sends the motor values in the body of a response token.
  * @param data - token recieved from the surface
@@ -282,20 +296,21 @@ function recieveControllerData(data) {
          *
          * TODO I'd like to fix the last one if we have time, it's really a nitpicky thing though.
          */
-    const motorValues = motorMapMatrix.map((row, rowIndex) => {
-        const value = (row.reduce((sum, dir, index) => sum + dir * data.body[index], 0) / vectorTurbines) + 1 / 2;
+    // If doLoop is true, do the control loop. Otherwise, use raw controller data.
+    const values = (SHOULD_DO_CONTROL_LOOP) ? controlLoopify(data.body) : motorMatrixMath(data.body);
+    for(let rowIndex=0; rowIndex < 5; rowIndex++) {
         if (args.debug)
-            return value;
+            return values;
 
         try {
-            pca.setDutyCycle(motorChannels[rowIndex], value);
+            pca.setDutyCycle(motorChannels[rowIndex], values[rowIndex]); // TODO- fix me! rowindex is gone now.
         }
         catch (error) {
             console.error(error);
             console.log(`YOU GOT AN ERROR, BITCH: ${value} DON'T FUCKIN FLY`);
         }
-        return value;
-    });
+        return values;
+    }
     logger.d('motor values', JSON.stringify(motorValues));
 
     const response = new responseToken(motorValues, data.headers.transactionID);
@@ -330,22 +345,29 @@ function getRotationalMeasurements() {
 }
 
 function controlLoopify(data) {
-    // If zero values for degrees of freedom, set an interval until Ok conditions pop up again-
-    // either values are right, or we're trying to move.
-    let nowLinearMovement = [0,0,0];
-    nowLinearMovement = getLinearMeasurements();
-    let nowRotationalMovement = [0,0];
-    nowRotationalMovement = getRotationalMeasurements();
+    var intervalID = setInterval( () => {
+        if (!SHOULD_DO_CONTROL_LOOP) {
+            clearInterval(intervalID);
+        }
 
-    let linearVelocity = nowLinearMovement - prevLinear;
-    let rotationalVelocity = nowRotationalMovement - prevRotational;
+        // If zero values for degrees of freedom, set an interval until Ok conditions pop up again-
+        // either values are right, or we're trying to move.
+        let nowLinearMovement = [0,0,0];
+        nowLinearMovement = getLinearMeasurements();
+        let nowRotationalMovement = [0,0];
+        nowRotationalMovement = getRotationalMeasurements();
     
-    let okLinearRange = 5;
-    let okRotationalRange = 5;
-    
-    // If the value for a range of motion isn't (about) zero, and the user wants it to be,
-    // corrective action needs to be taken. That corrective action is a PI- a summation of 
-    // proportional and integral values. Derivative values may need to be added later. 
+        let linearVelocity = nowLinearMovement - prevLinear;
+        let rotationalVelocity = nowRotationalMovement - prevRotational;
+        
+        let okLinearRange = 5;
+        let okRotationalRange = 5;
+        
+
+        // If the value for a range of motion isn't (about) zero, and the user wants it to be,
+        // corrective action needs to be taken. That corrective action is a PI- a summation of 
+        // proportional and integral values. Derivative values may need to be added later. 
+    }, 100);
 }
 
 function LEDTest(data) {
