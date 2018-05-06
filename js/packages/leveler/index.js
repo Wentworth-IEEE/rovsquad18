@@ -1,21 +1,21 @@
 const gpio = require('pigpio').Gpio, 
     direction = new gpio(33, {mode: gpio.OUTPUT});
-const Pca9685Driver = require('pca9685');
+const { Pca9685Driver } = require('pca9685');
 const i2cbus = require('i2c-bus');
-
+//const logger = require('../logger');
 // TODO- make an import for both this file and the remote/index.js I snagged this from
 // That way they share stuff
 const pca = new Pca9685Driver({
     i2c: i2cbus.openSync(1),
     address: 0x40,
-    frequency: 300,
+    frequency: 50,
     debug: false
 }, error => {
     if (error) {
-        logger.e('PCA Init', 'it borked:\n');
+//        logger.e('PCA Init', 'it borked:\n');
         throw error;
     }
-    logger.i('PCA Init', 'PCA initialized successfully');
+//    logger.i('PCA Init', 'PCA initialized successfully');
 });
 
 module.exports = {
@@ -35,7 +35,7 @@ module.exports = {
 
     // Stops rotating.
     stopRotate: function() {
-        pca.setDutyCycle(0, 0);
+        pca.setDutyCycle(7, 0);
     },
 
     // Spin clockwise by given number of degrees.
@@ -79,3 +79,12 @@ function beStepping() {
     pca.setDutyCycle(7, 0.5);
 }
 
+function takeApproxSteps(steps) {
+	beStepping();
+        setTimeout(() => {
+            stopRotate();
+        }, (steps*0.005));
+}
+function stopRotate(){
+	pca.setDutyCycle(7, 0);
+}
