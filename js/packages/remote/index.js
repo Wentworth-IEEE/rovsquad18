@@ -347,6 +347,7 @@ function getRotationalMeasurements() {
 
 function controlLoopify(data) {
     var intervalID = setInterval( () => {
+        // Kill the loop if needs to stop
         if (!SHOULD_DO_CONTROL_LOOP) {
             clearInterval(intervalID);
         }
@@ -362,12 +363,15 @@ function controlLoopify(data) {
         let rotationalVelocity = nowRotationalMovement - prevRotational;
         
         let okLinearRange = 5;
-        let okRotationalRange = 5;
-        
+        let okRotationalRange = 5; 
 
         // If the value for a range of motion isn't (about) zero, and the user wants it to be,
         // corrective action needs to be taken. That corrective action is a PI- a summation of 
         // proportional and integral values. Derivative values may need to be added later. 
+        let lin = getLinearMeasurements();
+        let rot = getRotationalMeasurements();
+        let processvar = [lin[0], rot[0], lin[1], rot[1], lin[2]];
+         
     }, 100);
 }
 
