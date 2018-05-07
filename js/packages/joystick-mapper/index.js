@@ -21,7 +21,9 @@ module.exports = class extends EventEmitter {
             0, // strafe
             0, // pitch
             0, // depth
-            0  // LEDs
+            0, // LEDs
+            0, // Manipulator
+            0  // Leveler
         ];
 
         const controlMatrix = [
@@ -64,6 +66,8 @@ module.exports = class extends EventEmitter {
             -this.axes[0] *  this.buttons[0] * !this.buttons[1], // pitch
             -this.axes[5] *  this.buttons[3] * !this.buttons[2] || this.directions[4], // depth
             -this.axes[5] *  this.buttons[2] * !this.buttons[3] || this.directions[5], // LEDs
+            -this.axes[3] *  this.buttons[0], // Manipulator
+             this.buttons[12] // Leveler- for video, just needs to be a boolean (spin or no spin)
         ];
         if (arrEquals(newVals, this.directions))
             return;
