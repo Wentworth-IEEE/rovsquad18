@@ -6,16 +6,14 @@ const i2cbus = require('i2c-bus');
 // TODO- make an import for both this file and the remote/index.js I snagged this from
 // That way they share stuff
 const pcs = new Pca9685Driver({
-    i2c: i2cbus.openSync(1),
+   i2c: i2cbus.openSync(1),
     address: 0x40,
     frequency: 50,
     debug: false
 }, error => {
     if (error) {
-        logger.e('PCA Init', 'it borked:\n');
         throw error;
     }
-    logger.i('PCA Init', 'PCA initialized successfully');
 });
 
 module.exports = {
@@ -35,7 +33,7 @@ module.exports = {
 
     // Stops rotating.
     stopRotate: function() {
-        pca.setDutyCycle(0, 0);
+       pca.setDutyCycle(7, 0);
     },
 
     // Spin clockwise by given number of degrees.
@@ -79,3 +77,12 @@ function beStepping() {
     pca.setDutyCycle(7, 0.5);
 }
 
+function takeApproxSteps(steps) {
+	beStepping();
+        setTimeout(() => {
+            stopRotate();
+        }, (steps*0.005));
+}
+function stopRotate(){
+	pca.setDutyCycle(7, 0);
+}
