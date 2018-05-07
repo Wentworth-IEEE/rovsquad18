@@ -354,6 +354,14 @@ function stopPiTempStream(data) {
     sendToken(new responseToken({}, data.headers.transactionID));
 }
 
+function depthLock() {
+    if(LOCK_DEPTH) {
+        setInterval( () =>
+            //do depth lock
+        ), 100);
+    }
+}
+
 function setLEDBrightness(data) {
     if (args.debug)
         return;
