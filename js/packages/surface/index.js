@@ -8,9 +8,9 @@ const http = require('http');
 const yargs = require('yargs');
 const express = require('express');
 const io = require('socket.io');
-const { nugLog } = require('nugget-logger');
-const BotSocket = require('bot-socket');
-const JoystickMapper = require('joystick-mapper');
+const { nugLog } = require('../nugget-logger');
+const BotSocket = require('../bot-socket');
+const JoystickMapper = require('../joystick-mapper');
 
 // set up logger
 const logger = new nugLog('debug', 'surface.log');
