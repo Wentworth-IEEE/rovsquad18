@@ -68,6 +68,21 @@ const motorMapMatrix = [
     [ 0,  0,  0, -1, 1 ], // F
     [ 0,  0,  0,  1, 1 ], // B
 ];
+
+let SHOULD_DO_CONTROL_LOOP = false; // Should we be doing the control loop? Defaults to false.
+let lastValMatrix = [
+   // F/B, Turn, Strafe, Pitch, Depth
+    [ 0, 0, 0, 0, 0 ], // LF
+    [ 0, 0, 0, 0, 0 ], // RF
+    [ 0, 0, 0, 0, 0 ], // LB
+    [ 0, 0, 0, 0, 0 ], // RB
+    [ 0, 0, 0, 0, 0 ], // F
+    [ 0, 0, 0, 0, 0 ], // B
+];
+
+let prevLinear     = [0,0,0];
+let prevRotational = [0,0,0];
+
 // # of turbines in the vector drive
 const vectorTurbines = 2;
 const intervals = {};
@@ -237,44 +252,58 @@ function stopMagStream(data) {
     sendToken(new responseToken({}, data.headers.transactionID));
 }
 
+function enableControlLoop() {
+    SHOULD_DO_CONTROL_LOOP = true;
+}
+
+function disableControlLoop() {
+    SHOULD_DO_CONTROL_LOOP = false;
+}
+
+function motorMatrixMath(joystickVals) {
+    //  setpoint = [F/B, Yaw, Strafe, Pitch, Depth]
+    let setpoint = [0,0,0,0,0,0];
+    for(let i=0; i<6; i++) {
+        setpoint[i] = joystickVals[i] * motorMapMatrix[i];// TODO: fix me <3
+    }
+
+    let max_e = Math.abs(Math.max(setpoint[4], setpoint[5]));
+    if(max_e > 1) {
+        setpoint[4] /= max_e;
+        setpoint[5] /= max_e;
+    }
+
+    let max_l = Math.abs(Math.max(setpoint[0], setpoint[1], setpoint[2], setpoint[3]));
+    if(max_l > 1) {
+        for(let i = 0; i < 4; i++) {
+            setpoint[i] /= max_l;
+        }
+    }
+
+    return setpoint;
+
+}
+
 /**
  * Maps degrees of freedom to motor values and sends the motor values in the body of a response token.
  * @param data - token recieved from the surface
  */
-function setMotors(data) {
-    const motorValues = motorMapMatrix.map((row, rowIndex) => {
-        /*
-         * OK let me explain my math here:
-         *
-         * Each row in the matrix motorMapMatrix is a motor, and each column is a degree of freedom.
-         *
-         * With the reduce function we're applying the values of the 5 degrees of freedom to each row
-         * in the matrix, where each value represents weather the turbine represented by that row should
-         * go forwards or backwards based on the value of the degr.ee of freedom in that column.
-         *
-         * Then we take that and divide it by the number of motors there are in the vector drive (4 in our case)
-         * so that no motor's value will never go over 1 or below -1.
-         *
-         * THEN we take that value and add 1 & divide by 2 so the number's range becomes [0 -> 1] instead of [-1 -> 1].
-         *
-         * FINALLY because sometimes the buttons hiccup and joystick-mapper adds more degrees of freedom together than
-         * it needs to, we set the duty cycle in a try/catch.
-         *
-         * TODO I'd like to fix the last one if we have time, it's really a nitpicky thing though.
-         */
-        const value = (row.reduce((sum, dir, index) => sum + dir * data.body[index], 0) / vectorTurbines) * 400 + 1550;
+function recieveControllerData(data) {
+    // If doLoop is true, do the control loop. Otherwise, use raw controller data.
+    const values = (SHOULD_DO_CONTROL_LOOP) ? controlLoopify(data.body) : motorMatrixMath(data.body);
+    for(let rowIndex=0; rowIndex < 5; rowIndex++) {
         if (args.debug)
-            return value;
+            return values;
 
         try {
-            pca.setPulseLength(motorChannels[rowIndex], value);
+            pca.setDutyCycle(motorChannels[rowIndex], values[rowIndex]);
         }
         catch (error) {
             console.error(error);
             console.log(`YOU GOT AN ERROR, BITCH: ${value} DON'T FUCKIN FLY`);
         }
-        return value;
-    });
+        return values;
+    }
     logger.d('motor values', JSON.stringify(motorValues));
 
     const response = new responseToken(motorValues, data.headers.transactionID);
@@ -319,6 +348,64 @@ function stopPiTempStream(data) {
 }
 
 function setLEDBrightness(data) {
+
+// Because of the way the board is laid out, 'x' isn't actually 'x', 'roll' isn't actually 'roll', 
+// and so on. These functions act as sort-of 'wrappers' for those things.
+function getYaw() {
+    return 0;
+}
+
+function getPitch() {
+    return 0;
+}
+
+function getFB() {
+    return 0;
+}
+
+function getUD() {
+    return 0;
+}
+
+function getLinearMeasurements() {
+    return [0,0,0];
+}
+
+function getRotationalMeasurements() {
+    return [0,0];
+}
+
+function controlLoopify(data) {
+    var intervalID = setInterval( () => {
+        // Kill the loop if needs to stop
+        if (!SHOULD_DO_CONTROL_LOOP) {
+            clearInterval(intervalID);
+        }
+
+        // If zero values for degrees of freedom, set an interval until Ok conditions pop up again-
+        // either values are right, or we're trying to move.
+        let nowLinearMovement = [0,0,0];
+        nowLinearMovement = getLinearMeasurements();
+        let nowRotationalMovement = [0,0];
+        nowRotationalMovement = getRotationalMeasurements();
+    
+        let linearVelocity = nowLinearMovement - prevLinear;
+        let rotationalVelocity = nowRotationalMovement - prevRotational;
+        
+        let okLinearRange = 5;
+        let okRotationalRange = 5; 
+
+        // If the value for a range of motion isn't (about) zero, and the user wants it to be,
+        // corrective action needs to be taken. That corrective action is a PI- a summation of 
+        // proportional and integral values. Derivative values may need to be added later. 
+        let lin = getLinearMeasurements();
+        let rot = getRotationalMeasurements();
+        let processvar = [lin[0], rot[0], lin[1], rot[1], lin[2]];
+         
+    }, 100);
+}
+
+function LEDTest(data) {
     if (args.debug)
         return;
 
