@@ -9,8 +9,7 @@
   "author": "Nugget Industries",
   "license": "ISC",
   "dependencies": {
-    "botsocket": "file:../botSocket",
-    "controller": "file:../controller",
+    "bot-socket": "file:../bot-socket",
     "express": "^4.16.2",
     "gamepad": "^1.5.2",
     "joystick-mapper": "file:../joystick-mapper",
