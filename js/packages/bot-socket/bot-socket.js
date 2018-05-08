@@ -9,8 +9,8 @@
 // dependencies
 const net = require('net');
 const EventEmitter = require('events');
-const { nugLog } = require('nugget-logger');
-const botProtocol = require('bot-protocol');
+const { nugLog } = require('../nugget-logger');
+const botProtocol = require('../bot-protocol');
 const { responseTypes } = botProtocol;
 
 // set up logger
