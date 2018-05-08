@@ -1,0 +1,16 @@
+{
+  "name": "leveler",
+  "version": "1.0.0",
+  "description": "Controls the leveler and stuff.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Chris Thierauf",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "i2c-bus": "^3.2.0",
+    "pca9685": "^4.0.3",
+    "pigpio": "^1.0.0"
+  }
+}
