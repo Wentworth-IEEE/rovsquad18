@@ -1,0 +1,9 @@
+[Unit]
+Description=GO GO NUGGET POWER
+
+[Service]
+Type=simple
+ExecStart=node /opt/rov2017
+
+[Install]
+WantedBy=multi-user.target
