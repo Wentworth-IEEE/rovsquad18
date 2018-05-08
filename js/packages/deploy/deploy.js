@@ -32,7 +32,7 @@ const { scp } = require('scp2');
 const remoteExec = require('remote-exec');
 
 // look for the pi here!
-const defaultPiAddress = 'hardboilednugget.local';
+const defaultPiAddress = 'deepfriednug.local';
 
 const args = yargs
     .usage('Usage: $0 [options]')

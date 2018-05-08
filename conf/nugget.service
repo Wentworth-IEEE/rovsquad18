@@ -3,7 +3,8 @@ Description=GO GO NUGGET POWER
 
 [Service]
 Type=simple
-ExecStart=node /opt/rov2017
+ExecStart=/usr/bin/node /opt/rov2017
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
