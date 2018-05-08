@@ -50,13 +50,12 @@ module.exports = class extends EventEmitter {
 
     checkValues() {
         const newVals = [
-            -this.axes[0] * !this.buttons[0], // FB
-             this.axes[1] * !this.buttons[1], // turn
-             this.axes[1] *  this.buttons[1] * !this.buttons[0], // strafe
-            -this.axes[0] *  this.buttons[0] * !this.buttons[1], // pitch
-            -this.axes[5] *  this.buttons[3] * !this.buttons[2] || this.directions[4], // depth
-            -this.axes[5] *  this.buttons[2] * !this.buttons[3] || this.directions[5], // LEDs
-            -this.axes[3] // manipulator
+            !this.buttons[6] && !this.buttons[0] * -this.axes[0], // FB
+            !this.buttons[6] &&  this.axes[4], // turn
+            !this.buttons[6] &&  this.axes[1], // strafe
+            !this.buttons[6] &&  this.buttons[0] * -this.axes[0], // pitch
+            !this.buttons[6] && (this.buttons[3] ? -this.axes[5] * !this.buttons[2] : this.directions[4]), // depth
+            !this.buttons[6] && -this.axes[3]
         ];
         if (arrEquals(newVals, this.directions))
             return;

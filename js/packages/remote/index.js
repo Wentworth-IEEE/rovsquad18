@@ -56,17 +56,19 @@ const motorChannels = [
     9,  // RB
     1,  // F
     11, // B
+    0   // Manipulator
 ];
 const manipulatorChannel = 0;
 const LEDChannels = [5, 6];
 const motorMapMatrix = [
     // F/B, Turn, Strafe, Pitch, Depth
-    [ 1,  1,  1,  0,  0 ], // LF
-    [ 1, -1, -1,  0,  0 ], // RF
-    [ 1,  1, -1,  0,  0 ], // LB
-    [ 1, -1,  1,  0,  0 ], // RB
-    [ 0,  0,  0,  2, -2 ], // F
-    [ 0,  0,  0, -2, -2 ], // B
+    [ 1,  1,  1,  0,  0, 0 ], // LF
+    [ 1, -1, -1,  0,  0, 0 ], // RF
+    [ 1,  1, -1,  0,  0, 0 ], // LB
+    [ 1, -1,  1,  0,  0, 0 ], // RB
+    [ 0,  0,  0,  2, -2, 0 ], // F
+    [ 0,  0,  0, -2, -2, 0 ], // B
+    [ 0,  0,  0,  0,  0, 2 ], // B
 ];
 // # of turbines in the vector drive
 const vectorTurbines = 2;
