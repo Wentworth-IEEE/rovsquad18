@@ -1,11 +1,11 @@
 const gpio = require('pigpio').Gpio, 
     direction = new gpio(33, {mode: gpio.OUTPUT});
-const Pca9685Driver = require('pca9685');
+const { Pca9685Driver } = require('pca9685');
 const i2cbus = require('i2c-bus');
 
 // TODO- make an import for both this file and the remote/index.js I snagged this from
 // That way they share stuff
-const pcs = new Pca9685Driver({
+const pca = new Pca9685Driver({
    i2c: i2cbus.openSync(1),
     address: 0x40,
     frequency: 50,
