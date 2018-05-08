@@ -21,9 +21,7 @@ module.exports = class extends EventEmitter {
             0, // strafe
             0, // pitch
             0, // depth
-            0, // LEDs
-            0, // Manipulator
-            0  // Leveler
+            0  // LEDs
         ];
 
         const controlMatrix = [

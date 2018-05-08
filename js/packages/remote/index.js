@@ -242,7 +242,6 @@ function stopMagStream(data) {
  * @param data - token recieved from the surface
  */
 function setMotors(data) {
-    pca.setPulseLength(0, data.body[6]);
     const motorValues = motorMapMatrix.map((row, rowIndex) => {
         /*
          * OK let me explain my math here:
