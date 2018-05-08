@@ -65,6 +65,14 @@ module.exports = {
         setTimeout(() => {
             stopRotate();
         }, (steps*0.005));
+    },
+
+    startDC() {
+        pca.setDutyCycle(7, 1);
+    },
+
+    stopDC() {
+        pca.setDutyCycle(7, 0);
     }
 }
 
