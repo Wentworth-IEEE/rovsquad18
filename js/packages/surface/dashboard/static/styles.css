@@ -1,0 +1,33 @@
+#container {
+    position: relative;
+    width: 160px;
+    height: 200px;
+}
+
+#F {
+    position: absolute;
+    left: 50%;
+}
+#RF {
+    position: absolute;
+    left: 100%;
+    top: 33%;
+}
+#RB {
+    position: absolute;
+    left: 100%;
+    top: 67%;
+}
+#B {
+    position: absolute;
+    left: 50%;
+    top: 100%;
+}
+#LB {
+    position: absolute;
+    top: 67%;
+}
+#LF {
+    position: absolute;
+    top: 33%;
+}
