@@ -4,6 +4,12 @@ const gpio = require('pigpio').Gpio,
     bagTwoOpen  = new gpio(24, {mode: gpio.OUTPUT}),
     bagTwoClose = new gpio(25, {mode: gpio.OUTPUT});
 
+// Guarantee no floating pins
+bagOneOpen.digitalWrite(0);
+bagOneClose.digitalWrite(0);
+bagTwoOpen.digitalWrite(0);
+bagTwoClose.digitalWrite(0);
+
 module.exports = {
     openBagOne: function() {
         pulsePin(bagOneOpen);
