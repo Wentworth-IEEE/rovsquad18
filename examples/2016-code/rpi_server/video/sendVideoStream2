@@ -1,2 +1,0 @@
-#!/bin/bash
-./bin/vplay -o -f -c -1 -d /dev/video1 | nc 10.10.10.5 5001
