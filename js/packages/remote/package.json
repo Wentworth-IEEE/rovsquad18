@@ -9,6 +9,7 @@
   "author": "Nugget Industries",
   "license": "ISC",
   "dependencies": {
+    "bag-control": "file:../bag-control",
     "bot-protocol": "file:../bot-protocol",
     "nugget-logger": "file:../nugget-logger",
     "pca9685": "^4.0.3",
