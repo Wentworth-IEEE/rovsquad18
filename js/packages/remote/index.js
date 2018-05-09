@@ -19,7 +19,6 @@ const yargs = require('yargs');
 const { nugLog, levels } = require('nugget-logger');
 const { tokenTypes, responseTypes, responseToken } = require('bot-protocol');
 const { Pca9685Driver } = require("pca9685");
-const { liftBag } = require('bag-control');
 const util = require('util');
 const fs = require('fs');
 const args = yargs
@@ -46,6 +45,7 @@ const args = yargs
     .argv;
 if (args.local) args.debug = true;
 const i2cbus = args.debug ? { openSync: () => 69 } : require('i2c-bus');
+const { liftBag } = args.debug ? {} : require('bag-control');
 // global constants
 const hostAddress = '0.0.0.0';
 const hostPort = 8080;
