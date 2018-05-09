@@ -26,7 +26,7 @@ module.exports = {
     closeBagTwo: function() {
         pulsePin(bagTwoClose);
     }
-}
+};
 
 function pulsePin(pin) {
     console.log('Pin on!');

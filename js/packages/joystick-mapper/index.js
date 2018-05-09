@@ -21,16 +21,7 @@ module.exports = class extends EventEmitter {
             0, // strafe
             0, // pitch
             0, // depth
-            0  // LEDs
-        ];
-
-        const controlMatrix = [
-          //  A   1   2   3   4   5   B   1   2   3   4   5   6   7   8   9   10  11
-            [-1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 ],
-            [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 ],
-            [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 ],
-            [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 ],
-            [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 ]
+            0  // manipulator
         ];
 
         gamepad.on('down', (id, num) => this.buttonDown(id, num));
@@ -62,8 +53,8 @@ module.exports = class extends EventEmitter {
             !this.buttons[6] &&  this.axes[4], // turn
             !this.buttons[6] &&  this.axes[1], // strafe
             !this.buttons[6] &&  this.buttons[0] * -this.axes[0], // pitch
-            !this.buttons[6] && (this.buttons[3] ? -this.axes[5] * !this.buttons[2] : this.directions[4]), // depth
-            !this.buttons[6] && (this.buttons[2] ? -this.axes[5] * !this.buttons[3] : this.directions[5]), // LEDs
+            !this.buttons[6] && (this.buttons[3] ? -this.axes[5] * !this.buttons[1] : this.directions[4]), // depth
+            !this.buttons[6] && (this.buttons[1] * -this.axes[5] * !this.buttons[3])  // manipulator
         ];
         if (arrEquals(newVals, this.directions))
             return;
