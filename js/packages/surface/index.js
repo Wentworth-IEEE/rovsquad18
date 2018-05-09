@@ -30,7 +30,7 @@ const args = yargs
         alias: 'pi-address',
         desc: 'connect to the robot at this address',
         type: 'string',
-        default: 'hardboilednugget.local',
+        default: 'deepfriednug.local',
         nargs: 1
     })
     .alias('h', 'help')
