@@ -1,17 +1,9 @@
 {
-  "name": "remote",
-  "version": "1.0.0",
-  "description": "for the bot",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Nugget Industries",
-  "license": "ISC",
-  "dependencies": {
-    "bot-protocol": "file:../bot-protocol",
-    "nugget-logger": "file:../nugget-logger",
-    "pca9685": "^4.0.3",
-    "yargs": "^11.0.0"
-  }
+	"dependencies": {
+		"bag-control": "file:../bag-control",
+		"bot-protocol": "file:../bot-protocol",
+		"nugget-logger": "file:../nugget-logger",
+		"pca9685": "^4.0.3",
+		"yargs": "^11.0.0"
+	}
 }
