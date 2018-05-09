@@ -60,18 +60,21 @@ const motorChannels = [
 ];
 const manipulatorChannel = 0;
 const LEDChannels = [5, 6];
-const motorMapMatrix = [
-    // F/B, Turn, Strafe, Pitch, Depth
-    [ 1,  1,  1,  0,  0, 0 ], // LF
-    [ 1, -1, -1,  0,  0, 0 ], // RF
-    [ 1,  1, -1,  0,  0, 0 ], // LB
-    [ 1, -1,  1,  0,  0, 0 ], // RB
-    [ 0,  0,  0,  2, -2, 0 ], // F
-    [ 0,  0,  0, -2, -2, 0 ], // B
-    [ 0,  0,  0,  0,  0, 2 ], // B
+const vectorMapMatrix = [
+    // F/B, Turn, Strafe
+    [ 1,  1,  1 ], // LF
+    [ 1, -1, -1 ], // RF
+    [ 1,  1, -1 ], // LB
+    [ 1, -1,  1 ], // RB
+];
+const depthMapMatrix = [
+    // Pitch, Depth
+    [  1, -1 ], // F
+    [ -1, -1 ]  // B
 ];
 // # of turbines in the vector drive
-const vectorTurbines = 2;
+const vectorDOF = 3;
+const depthDOF = 2;
 const intervals = {};
 
 // set up logger
@@ -244,11 +247,40 @@ function stopMagStream(data) {
  * @param data - token recieved from the surface
  */
 function setMotors(data) {
-    const motorValues = motorMapMatrix.map((row, rowIndex) => {
+    const vectorMotorVals = setMotorValues(data.body.slice(0, 3), vectorMapMatrix, 3);
+    const depthMotorVals = setMotorValues(data.body.slice(3, 5), depthMapMatrix, 2);
+    const manipulatorVal = setMotorValue(data.body[5], 2);
+    const motorValues = vectorMotorVals.concat(depthMotorVals.concat(manipulatorVal));
+    logger.d('motor values', JSON.stringify(motorValues));
+    motorValues.map((motorVal, index) => {
+        if (args.debug) return;
+        try{
+            pca.setPulseLength(motorChannels[index], motorVal);
+        }
+        catch (error) {
+            console.error(`YOU GOT AN ERROR BITCH ${motorVal} INDEX ${index} DON'T FLY`);
+            console.error(error);
+        }
+    });
+
+
+    const response = new responseToken(motorValues, data.headers.transactionID);
+    sendToken(response);
+}
+
+/**
+ * Map the input DOF data to motor values
+ * @param data - Array of DOF values
+ * @param matrix - Matrix mapping DOFs to motor values
+ * @param scale - divide the resulting motor motor values by this
+ * @returns {Array<Object>}
+ */
+function setMotorValues(data, matrix, scale) {
+    return matrix.map(row => {
         /*
          * OK let me explain my math here:
          *
-         * Each row in the matrix motorMapMatrix is a motor, and each column is a degree of freedom.
+         * Each row in the matrix vectorMapMatrix is a motor, and each column is a degree of freedom.
          *
          * With the reduce function we're applying the values of the 5 degrees of freedom to each row
          * in the matrix, where each value represents weather the turbine represented by that row should
@@ -264,23 +296,18 @@ function setMotors(data) {
          *
          * TODO I'd like to fix the last one if we have time, it's really a nitpicky thing though.
          */
-        const value = (row.reduce((sum, dir, index) => sum + dir * data.body[index], 0) / vectorTurbines) * 400 + 1550;
-        if (args.debug)
-            return value;
-
-        try {
-            pca.setPulseLength(motorChannels[rowIndex], value);
-        }
-        catch (error) {
-            console.error(error);
-            console.log(`YOU GOT AN ERROR, BITCH: ${value} DON'T FUCKIN FLY`);
-        }
-        return value;
+        return (row.reduce((sum, dir, index) => sum + dir * data[index], 0) / scale) * 400 + 1550;
     });
-    logger.d('motor values', JSON.stringify(motorValues));
+}
 
-    const response = new responseToken(motorValues, data.headers.transactionID);
-    sendToken(response);
+/**
+ * Wrapper for setMotorValues for when you only have to set one motor value (  like the manipulator)
+ * @param data - DOF data
+ * @param scale - Divide the resulting motor value by this
+ * @returns {Array<Object>}
+ */
+function setMotorValue(data, scale) {
+    return setMotorValues([[data]], [[1]], scale)
 }
 
 /**

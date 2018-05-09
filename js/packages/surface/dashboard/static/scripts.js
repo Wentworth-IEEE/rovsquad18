@@ -5,22 +5,18 @@ let attitude, heading, motors;
 $(document).ready(() => {
     attitude = $.flightIndicator('#attitude', 'attitude', {
         size: 300,
-        showBox: false,
+        showBox: true,
         img_directory: imgDirectory
     });
     heading = $.flightIndicator('#heading', 'heading', {
         size: 300,
-        showBox: false,
+        showBox: true,
         img_directory: imgDirectory
     });
-    motors = [ $('#LF'), $('#RF'), $('#LB'), $('#RB'), $('#F'), $('#B') ];
+    motors = [ $('#LF'), $('#RF'), $('#LB'), $('#RB'), $('#F'), $('#B'), $('#MAN') ];
     // do some button listeners
-    $('#connect').click(() => {
-        socket.emit('connectToBot')
-    });
-    $('#disconnect').click(() => {
-        socket.emit('disconnectFromBot');
-    });
+    $('#connect').click(() => socket.emit('connectToBot'));
+    $('#disconnect').click(() => socket.emit('disconnectFromBot'));
 });
 // ye olde socket listeners
 socket.on('magData', data => {
