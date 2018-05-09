@@ -1,6 +1,11 @@
 {
-	"dependencies": {
-		"wiring-pi": "^2.2.1",
-		"wiringpi-node": "^2.4.4"
-	}
+  "name": "bag-control",
+  "version": "1.0.0",
+  "description": "Control thy bags, o lord!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Chris Thierauf",
+  "license": "ISC"
 }
