@@ -264,6 +264,9 @@ function setMotors(data) {
         }
     });
 
+    if (!args.debug)
+        pca.setDutyCycle(7, data.body[6]);
+    logger.d('leveler', `Setting leveler channel to ${data.body[6]}`);
 
     const response = new responseToken(motorValues, data.headers.transactionID);
     sendToken(response);

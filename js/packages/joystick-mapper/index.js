@@ -28,7 +28,8 @@ module.exports = class extends EventEmitter {
             0, // strafe
             0, // pitch
             0, // depth
-            0  // manipulator
+            0, // manipulator
+            0  // leveler
         ];
 
         gamepad.on('down', (id, num) => this.buttonDown(id, num));
@@ -64,7 +65,8 @@ module.exports = class extends EventEmitter {
             !this.buttons[6] &&  this.axes[LRAxis], // strafe
             !this.buttons[6] &&  this.buttons[0] * -this.axes[FBAxis], // pitch
             !this.buttons[6] && (this.buttons[3] ? -this.axes[throttleAxis] * !this.buttons[1] : this.directions[4]), // depth
-            !this.buttons[6] && (this.buttons[1] * -this.axes[throttleAxis] * !this.buttons[3])  // manipulator
+            !this.buttons[6] && (this.buttons[1] * -this.axes[throttleAxis] * !this.buttons[3]), // manipulator
+            !this.buttons[6] &&  this.buttons[10] * 1
         ];
         if (arrEquals(newVals, this.directions))
             return;
