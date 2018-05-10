@@ -6,6 +6,7 @@
   "scripts": {
     "test": "mocha packages/*/test/*",
     "bootstrap": "lerna bootstrap",
+    "clean": "lerna clean",
     "deploy": "node packages/deploy",
     "surface": "node packages/surface"
   },
