@@ -3,12 +3,33 @@ const gamepad = require('gamepad');
 
 const arrEquals = (arr1, arr2) => !arr1.filter((elem, index) => elem !== arr2[index]).length;
 
-const FBAxis = 1;
-const LRAxis = 0;
-const dickspinAxis = 2;
-const throttleAxis = 3;
-const smolLeftRightAxis = 4;
-const smolUpDownAxis = 5;
+// true if platform is windows
+const win = require('os').platform().indexOf('win32') > -1;
+
+let FBAxis;
+let LRAxis;
+let dickspinAxis;
+let smolLeftRightAxis;
+let smolUpDownAxis;
+let throttleAxis;
+
+if (win) {
+    FBAxis = 0;
+    LRAxis = 1;
+    dickspinAxis = 4;
+    smolLeftRightAxis = 2;
+    smolUpDownAxis = 3;
+    throttleAxis = 5;
+}
+else {
+    FBAxis = 1;
+    LRAxis = 0;
+    dickspinAxis = 2;
+    smolLeftRightAxis = 4;
+    smolUpDownAxis = 5;
+    throttleAxis = 3;
+}
+
 
 gamepad.init();
 setInterval(gamepad.processEvents, 17);
@@ -40,12 +61,12 @@ module.exports = class extends EventEmitter {
 
     buttonDown(id, num) {
         this.buttons[num] = true;
-	this.emit('rawData', this.buttons);
+        this.emit('rawData', this.buttons);
     }
 
     buttonUp(id, num) {
         this.buttons[num] = false;
-	this.emit('rawData', this.buttons);
+        this.emit('rawData', this.buttons);
     }
 
     joystickMove(id, axis, val) {
@@ -55,7 +76,7 @@ module.exports = class extends EventEmitter {
         }
 
         this.axes[axis] = val;
-	this.emit('rawData', this.axes);
+        this.emit('rawData', this.axes);
     }
 
     checkValues() {
