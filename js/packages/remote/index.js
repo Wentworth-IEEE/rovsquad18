@@ -57,7 +57,8 @@ const motorChannels = [
     9,  // RB
     1,  // F
     11, // B
-    0   // Manipulator
+    0,  // Manipulator
+    10  // picam servo
 ];
 const manipulatorChannel = 0;
 const LEDChannels = [5, 6];
@@ -251,7 +252,8 @@ function setMotors(data) {
     const vectorMotorVals = setMotorValues(data.body.slice(0, 3), vectorMapMatrix, 3);
     const depthMotorVals = setMotorValues(data.body.slice(3, 5), depthMapMatrix, 2);
     const manipulatorVal = setMotorValue(data.body[5], 2);
-    const motorValues = vectorMotorVals.concat(depthMotorVals.concat(manipulatorVal));
+    const picamServoVal = setMotorValue(data.body[6]);
+    const motorValues = vectorMotorVals.concat(depthMotorVals.concat(manipulatorVal.concat(picamServoVal)));
     logger.d('motor values', JSON.stringify(motorValues));
     motorValues.map((motorVal, index) => {
         if (args.debug) return;
@@ -264,7 +266,6 @@ function setMotors(data) {
         }
     });
 
-
     const response = new responseToken(motorValues, data.headers.transactionID);
     sendToken(response);
 }
@@ -276,7 +277,7 @@ function setMotors(data) {
  * @param scale - divide the resulting motor motor values by this
  * @returns {Array<Object>}
  */
-function setMotorValues(data, matrix, scale) {
+function setMotorValues(data, matrix, scale = 1) {
     return matrix.map(row => {
         /*
          * OK let me explain my math here:

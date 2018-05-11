@@ -7,8 +7,5 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Nuggget Industries",
-  "license": "ISC",
-  "dependencies": {
-    "winstond": "0.0.2"
-  }
+  "license": "ISC"
 }
