@@ -60,7 +60,6 @@ const motorChannels = [
     0,  // Manipulator
     10  // picam servo
 ];
-const manipulatorChannel = 0;
 const LEDChannels = [5, 6];
 const vectorMapMatrix = [
     // F/B, Turn, Strafe
@@ -75,8 +74,6 @@ const depthMapMatrix = [
     [ -1, -1 ]  // B
 ];
 // # of turbines in the vector drive
-const vectorDOF = 3;
-const depthDOF = 2;
 const intervals = {};
 
 // set up logger
