@@ -89,7 +89,7 @@ module.exports = class extends EventEmitter {
             !this.buttons[6] && (this.buttons[3] ? -this.axes[throttleAxis] * !this.buttons[1] : this.directions[4]), // depth
             !this.buttons[6] && (this.buttons[1] * -this.axes[throttleAxis] * !this.buttons[3]), // manipulator
             !this.buttons[6] &&  this.buttons[10] * 1,
-             this.buttons[2] ?  -this.axes[throttleAxis] : this.directions[6]
+             this.buttons[2] ?  -this.axes[throttleAxis] : this.directions[7]
         ];
         if (arrEquals(newVals, this.directions))
             return;
@@ -102,5 +102,5 @@ module.exports = class extends EventEmitter {
 
 if (require.main === module) {
     const mapper = new module.exports(17, 0.15);
-    mapper.on('rawData', console.log);
+    mapper.on('data', console.log);
 }
