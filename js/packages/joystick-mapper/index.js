@@ -3,6 +3,34 @@ const gamepad = require('gamepad');
 
 const arrEquals = (arr1, arr2) => !arr1.filter((elem, index) => elem !== arr2[index]).length;
 
+// true if platform is windows
+const win = require('os').platform().indexOf('win32') > -1;
+
+let FBAxis;
+let LRAxis;
+let dickspinAxis;
+let smolLeftRightAxis;
+let smolUpDownAxis;
+let throttleAxis;
+
+if (win) {
+    FBAxis = 0;
+    LRAxis = 1;
+    dickspinAxis = 4;
+    smolLeftRightAxis = 2;
+    smolUpDownAxis = 3;
+    throttleAxis = 5;
+}
+else {
+    FBAxis = 1;
+    LRAxis = 0;
+    dickspinAxis = 2;
+    smolLeftRightAxis = 4;
+    smolUpDownAxis = 5;
+    throttleAxis = 3;
+}
+
+
 gamepad.init();
 setInterval(gamepad.processEvents, 17);
 
@@ -21,7 +49,8 @@ module.exports = class extends EventEmitter {
             0, // strafe
             0, // pitch
             0, // depth
-            0  // manipulator
+            0, // manipulator
+            0  // picam servo
         ];
 
         gamepad.on('down', (id, num) => this.buttonDown(id, num));
@@ -32,10 +61,12 @@ module.exports = class extends EventEmitter {
 
     buttonDown(id, num) {
         this.buttons[num] = true;
+        this.emit('rawData', this.buttons);
     }
 
     buttonUp(id, num) {
         this.buttons[num] = false;
+        this.emit('rawData', this.buttons);
     }
 
     joystickMove(id, axis, val) {
@@ -45,16 +76,18 @@ module.exports = class extends EventEmitter {
         }
 
         this.axes[axis] = val;
+        this.emit('rawData', this.axes);
     }
 
     checkValues() {
         const newVals = [
-            !this.buttons[6] && !this.buttons[0] * -this.axes[0], // FB
-            !this.buttons[6] &&  this.axes[4], // turn
-            !this.buttons[6] &&  this.axes[1], // strafe
-            !this.buttons[6] &&  this.buttons[0] * -this.axes[0], // pitch
-            !this.buttons[6] && (this.buttons[3] ? -this.axes[5] * !this.buttons[1] : this.directions[4]), // depth
-            !this.buttons[6] && (this.buttons[1] * -this.axes[5] * !this.buttons[3])  // manipulator
+            !this.buttons[6] && !this.buttons[0] * -this.axes[FBAxis], // FB
+            !this.buttons[6] &&  this.axes[dickspinAxis], // turn
+            !this.buttons[6] &&  this.axes[LRAxis], // strafe
+            !this.buttons[6] &&  this.buttons[0] * -this.axes[FBAxis], // pitch
+            !this.buttons[6] && (this.buttons[3] ? -this.axes[throttleAxis] :  this.directions[4]), // depth
+            !this.buttons[6] && (this.buttons[1] * -this.axes[throttleAxis] * !this.buttons[3]),  // manipulator
+             this.buttons[2] ?  -this.axes[throttleAxis] : this.directions[6]
         ];
         if (arrEquals(newVals, this.directions))
             return;
@@ -67,5 +100,5 @@ module.exports = class extends EventEmitter {
 
 if (require.main === module) {
     const mapper = new module.exports(17, 0.15);
-    mapper.on('data', console.log);
+    mapper.on('rawData', console.log);
 }
