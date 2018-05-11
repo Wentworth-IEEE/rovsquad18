@@ -25,4 +25,7 @@ socket.on('magData', data => {
     heading.setHeading(data.heading)
 });
 socket.on('piTempData', data => $('#piTemp').val(data));
-socket.on('motorData', data => data.map((value, index) => motors[index].val((value - 1550) / 400)));
+socket.on('motorData', data => {
+    console.log(data);
+    data.map((value, index) => motors[index].val((value - 1550) / 400))
+});

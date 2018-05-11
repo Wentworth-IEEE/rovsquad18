@@ -246,10 +246,10 @@ function stopMagStream(data) {
  * @param data - token recieved from the surface
  */
 function setMotors(data) {
-    const vectorMotorVals = setMotorValues(data.body.slice(0, 3), vectorMapMatrix, 3);
-    const depthMotorVals = setMotorValues(data.body.slice(3, 5), depthMapMatrix, 2);
-    const manipulatorVal = setMotorValue(data.body[5], 2);
-    const picamServoVal = setMotorValue(data.body[6]);
+    const vectorMotorVals = setMotorValues(data.body.slice(0, 3), vectorMapMatrix);
+    const depthMotorVals = setMotorValues(data.body.slice(3, 5), depthMapMatrix);
+    const manipulatorVal = setMotorValue(data.body[5]);
+    const picamServoVal = setMotorValue(data.body[7]);
     const motorValues = vectorMotorVals.concat(depthMotorVals.concat(manipulatorVal.concat(picamServoVal)));
     logger.d('motor values', JSON.stringify(motorValues));
     motorValues.map((motorVal, index) => {
@@ -263,19 +263,31 @@ function setMotors(data) {
         }
     });
 
+    if (!args.debug)
+        pca.setDutyCycle(7, data.body[6]);
+    logger.d('leveler', `Setting leveler channel to ${data.body[6]}`);
+
     const response = new responseToken(motorValues, data.headers.transactionID);
     sendToken(response);
+}
+
+/**
+ * Wrapper for setMotorValues for when you only have to set one motor value (  like the manipulator)
+ * @param data - DOF data
+ * @returns {Array<Object>}
+ */
+function setMotorValue(data) {
+    return setMotorValues([[data]], [[1]])
 }
 
 /**
  * Map the input DOF data to motor values
  * @param data - Array of DOF values
  * @param matrix - Matrix mapping DOFs to motor values
- * @param scale - divide the resulting motor motor values by this
  * @returns {Array<Object>}
  */
-function setMotorValues(data, matrix, scale = 1) {
-    return matrix.map(row => {
+function setMotorValues(data, matrix) {
+    const rawValues = matrix.map(row => {
         /*
          * OK let me explain my math here:
          *
@@ -295,18 +307,14 @@ function setMotorValues(data, matrix, scale = 1) {
          *
          * TODO I'd like to fix the last one if we have time, it's really a nitpicky thing though.
          */
-        return (row.reduce((sum, dir, index) => sum + dir * data[index], 0) / scale) * 400 + 1550;
+        return row.reduce((sum, dir, index) => sum + dir * data[index], 0);
     });
-}
 
-/**
- * Wrapper for setMotorValues for when you only have to set one motor value (  like the manipulator)
- * @param data - DOF data
- * @param scale - Divide the resulting motor value by this
- * @returns {Array<Object>}
- */
-function setMotorValue(data, scale) {
-    return setMotorValues([[data]], [[1]], scale)
+    return rawValues.map(element =>
+        // divide all elements by max
+        //        calculate max using reduce
+        element / rawValues.reduce((accum, val) => Math.abs(val) > accum ? Math.abs(val) : accum, 1) * 400 + 1550
+    )
 }
 
 /**
