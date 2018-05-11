@@ -50,7 +50,8 @@ module.exports = class extends EventEmitter {
             0, // pitch
             0, // depth
             0, // manipulator
-            0  // leveler
+            0, // leveler
+            0  // picam servo
         ];
 
         gamepad.on('down', (id, num) => this.buttonDown(id, num));
@@ -87,7 +88,8 @@ module.exports = class extends EventEmitter {
             !this.buttons[6] &&  this.buttons[0] * -this.axes[FBAxis], // pitch
             !this.buttons[6] && (this.buttons[3] ? -this.axes[throttleAxis] * !this.buttons[1] : this.directions[4]), // depth
             !this.buttons[6] && (this.buttons[1] * -this.axes[throttleAxis] * !this.buttons[3]), // manipulator
-            !this.buttons[6] &&  this.buttons[10] * 1
+            !this.buttons[6] &&  this.buttons[10] * 1,
+             this.buttons[2] ?  -this.axes[throttleAxis] : this.directions[6]
         ];
         if (arrEquals(newVals, this.directions))
             return;
@@ -100,5 +102,5 @@ module.exports = class extends EventEmitter {
 
 if (require.main === module) {
     const mapper = new module.exports(17, 0.15);
-    mapper.on('data', console.log);
+    mapper.on('rawData', console.log);
 }

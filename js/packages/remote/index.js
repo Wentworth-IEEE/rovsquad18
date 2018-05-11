@@ -57,9 +57,9 @@ const motorChannels = [
     9,  // RB
     1,  // F
     11, // B
-    0   // Manipulator
+    0,  // Manipulator
+    10  // picam servo
 ];
-const manipulatorChannel = 0;
 const LEDChannels = [5, 6];
 const vectorMapMatrix = [
     // F/B, Turn, Strafe
@@ -74,8 +74,6 @@ const depthMapMatrix = [
     [ -1, -1 ]  // B
 ];
 // # of turbines in the vector drive
-const vectorDOF = 3;
-const depthDOF = 2;
 const intervals = {};
 
 // set up logger
@@ -251,7 +249,8 @@ function setMotors(data) {
     const vectorMotorVals = setMotorValues(data.body.slice(0, 3), vectorMapMatrix);
     const depthMotorVals = setMotorValues(data.body.slice(3, 5), depthMapMatrix);
     const manipulatorVal = setMotorValue(data.body[5]);
-    const motorValues = vectorMotorVals.concat(depthMotorVals.concat(manipulatorVal));
+    const picamServoVal = setMotorValue(data.body[7]);
+    const motorValues = vectorMotorVals.concat(depthMotorVals.concat(manipulatorVal.concat(picamServoVal)));
     logger.d('motor values', JSON.stringify(motorValues));
     motorValues.map((motorVal, index) => {
         if (args.debug) return;

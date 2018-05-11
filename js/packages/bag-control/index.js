@@ -34,5 +34,5 @@ function pulsePin(pin) {
     setTimeout(() => {
         console.log('Pin off!');
         pin.digitalWrite(0);
-    }, 100);
+    }, 8000);
 }
