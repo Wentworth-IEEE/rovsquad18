@@ -310,8 +310,11 @@ function setMotorValues(data, matrix) {
         return row.reduce((sum, dir, index) => sum + dir * data[index], 0);
     });
 
-    const max = rawValues.reduce((val, accum) => Math.abs(val) > accum ? Math.abs(val) : accum, 1);
-    return rawValues.map(element => element / max * 400 + 1550)
+    return rawValues.map(element =>
+        // divide all elements by max
+        //        calculate max using reduce
+        element / rawValues.reduce((accum, val) => Math.abs(val) > accum ? Math.abs(val) : accum, 1) * 400 + 1550
+    )
 }
 
 /**
