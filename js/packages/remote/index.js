@@ -357,11 +357,16 @@ function stopPiTempStream(data) {
 let loop_history = 10; // Being a variable lets us change this later, if that's useful.
 let z_last_raw; //  To be used as an array
 let z_last_diff; // Also to be used as an array
+// Constants are here for now, will be set by the user through the dashboard later.
+let zKp = 1;
+let zKi = 1;
+let zKd = 0;
+let LOCK_DEPTH = true; // As above- to be set by user later.
 function depthLock(data) {
     if(args.debug)
         return;
 
-    if(data.LOCK_DEPTH) {
+    if(LOCK_DEPTH) {
        let interval = setInterval( () =>
             //do depth lock
             appendZ(getDepth());
@@ -374,7 +379,7 @@ function depthLock(data) {
             pca.setPulseLength(1, zout+1550);
             pca.setPulseLength(11, zout+1550);
 
-            if(!data.LOCK_DEPTH) {
+            if(!LOCK_DEPTH) {
                 clearInterval(interval);
             }
         ), 100);
@@ -399,6 +404,10 @@ function appendZ(depth) {
         z_last_diff[i] = z_last_raw[i] - z_last_raw[i-1];
     }
     z_last_diff[0] = z_last_diff[0] - z_last_0;
+}
+
+function getDepth() {
+    return 0; // Replace with Bobby's sensor stuff
 }
 
 function getDepthIntegral() {
