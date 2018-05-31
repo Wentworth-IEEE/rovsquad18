@@ -354,12 +354,64 @@ function stopPiTempStream(data) {
     sendToken(new responseToken({}, data.headers.transactionID));
 }
 
-function depthLock() {
-    if(LOCK_DEPTH) {
-        setInterval( () =>
+let loop_history = 10; // Being a variable lets us change this later, if that's useful.
+let z_last_raw; //  To be used as an array
+let z_last_diff; // Also to be used as an array
+function depthLock(data) {
+    if(args.debug)
+        return;
+
+    if(data.LOCK_DEPTH) {
+       let interval = setInterval( () =>
             //do depth lock
+            appendZ(getDepth());
+
+            let zp = z_last[4]-z_last[3]; // We don't want a specific depth, we want depth to be constant. So- P is change between now and last.
+            let zi = getDepthIntegral();
+            let zd = getDepthDerivative();
+            let zout = doDepthPID(zp, zi, zd);
+
+            pca.setPulseLength(1, zout+1550);
+            pca.setPulseLength(11, zout+1550);
+
+            if(!data.LOCK_DEPTH) {
+                clearInterval(interval);
+            }
         ), 100);
     }
+}
+
+function doDepthPID(zp, zi, zd) {
+    return zKp*zp + zKi*zi + zKd*zd;
+}
+
+function appendZ(depth) {
+    // Shift everything in the array one to the left, discarding [0] and making the last index redundant
+    let z_last_0 = z_last[0]; // We're about to get rid of this, but we need it for math later.
+    for(let i = 0, i < loop_history-1, i++) {  // Getting raw values to play with
+        z_last[i] = z_last[i+1]
+    }
+    z_last[loop_history] = depth;
+
+    // We don't actually care about the actual depth, we care that we aren't moving. So, a new array comprised of
+    // the difference between each measurement is what we need.
+    for(let i = 1, i < loop_history, i++) {
+        z_last_diff[i] = z_last_raw[i] - z_last_raw[i-1];
+    }
+    z_last_diff[0] = z_last_diff[0] - z_last_0;
+}
+
+function getDepthIntegral() {
+    // This isn't an integral of the entire usage since that's not useful- it's just loop_history*interval length ms.
+    let returnval;
+    for(let i = 0; i < loop_history, i++) {
+        returnval += z_last[loop_history]*100;
+    }
+    return returnval;
+}
+
+function getDepthDerivative() {
+    return (z_last_diff[loop_history] - z_last_diff[0] ) / 2;
 }
 
 function setLEDBrightness(data) {
