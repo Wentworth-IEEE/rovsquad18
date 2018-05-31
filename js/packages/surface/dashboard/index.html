@@ -11,18 +11,132 @@
   <script src="/static/scripts.js"></script>
 </head>
 <body>
-<p>greetings</p><span id="attitude"></span><span id="heading"></span>
-<button id="connect">connect</button>
-<button id="disconnect">disconnect</button>]
-Pi Temp:<output id="piTemp" name="piTemp">not connected</output>
-<div id="container">
-  <output id="F">F</output>
-  <output id="RF">RF</output>
-  <output id="RB">RB</output>
-  <output id="B">B</output>
-  <output id="LB">LB</output>
-  <output id="LF">LF</output>
-</div>
-<output id="MAN">MAN</output>
+    <div id="content">
+        <div id="db_main" style="float:left">
+            <p>greetings</p><span id="attitude"></span><span id="heading"></span>
+            <button id="connect">connect</button>
+            <button id="disconnect">disconnect</button>
+            Pi Temp:<output id="piTemp" name="piTemp">not connected</output>
+            <div id="container">
+              <output id="F">F</output>
+              <output id="RF">RF</output>
+              <output id="RB">RB</output>
+              <output id="B">B</output>
+              <output id="LB">LB</output>
+              <output id="LF">LF</output>
+            </div>
+            <output id="MAN">MAN</output>
+        </div>
+    </div>
+
+    <button id="loop_on">Loops On</button>
+    <button id="loop_off">Loops Off</button>
+
+    <div id="pid_constants" style="width:400px, float:right">
+        <div id="lateral_movement" style="float:left">
+            <div id="z_loop_container" style="width:100px">
+                <form action="">
+                    <fieldset>
+                        <label> Depth P val </label>
+                        <input type="text" id="z_p"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+                    <fieldset>
+                        <label> Depth I val </label>
+                        <input type="text" id="z_i"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+                    <fieldset>
+                        <label> Depth D val </label>
+                        <input type="text" id="z_d"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+               </form>
+            </div>
+            
+            <div id="x_loop_container" style="width:100px">
+                <form action="">
+                    <fieldset>
+                        <label> Strafe P val </label>
+                        <input type="text" id="x_p"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+                    <fieldset>
+                        <label> Strafe I val </label>
+                        <input type="text" id="x_i"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+                    <fieldset>
+                        <label> Strafe D val </label>
+                        <input type="text" id="x_d"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+               </form>
+            </div>
+        
+            <div id="y_loop_container" style="width:100px">
+                <form action="">
+                    <fieldset>
+                        <label> Forwards/Backwards P val </label>
+                        <input type="text" id="y_p"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+                    <fieldset>
+                        <label> Forwards/Backwards I val </label>
+                        <input type="text" id="y_i"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+                    <fieldset>
+                        <label> Forwards/Backwards D val </label>
+                        <input type="text" id="y_d"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+               </form>
+            </div>
+        </div>    
+        
+        <div id="rotational_movement" style="float:left">
+            <div id="yaw_loop_container" style="width:100px">
+                <form action="">
+                    <fieldset>
+                        <label> Yaw P val </label>
+                        <input type="text" id="r_p"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+                    <fieldset>
+                        <label> Yaw I val </label>
+                        <input type="text" id="r_i"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+                    <fieldset>
+                        <label> Yaw D val </label>
+                        <input type="text" id="r_d"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+               </form>
+            </div>
+            
+            <div id="p_loop_container" style="width:100px">
+                <form action="">
+                    <fieldset>
+                        <label> Pitch P val </label>
+                        <input type="text" id="p_p"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+                    <fieldset>
+                        <label> Pitch I val </label>
+                        <input type="text" id="p_i"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+                    <fieldset>
+                        <label> Pitch D val </label>
+                        <input type="text" id="p_d"/>
+                        <input type="button" value="Send">
+                    </fieldset>
+               </form>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
