@@ -370,19 +370,20 @@ function depthLock(interval) {
     if(interval != null)
         clearInterval(interval);
     
-    interval = setInterval( () =>
-        //do depth lock
-        appendZ(getDepth());
-
-        let zp = z_last_raw; // We don't want a specific depth, we want depth to be constant. So- P is change between now and last.
-        let zi = getDepthIntegral();
-        let zd = getDepthDerivative();
-        let zout = doDepthPID(zp, zi, zd);
-
-        pca.setPulseLength(1, zout+1550);
-        pca.setPulseLength(11, zout+1550);
-    ), 100);
+    interval = setInterval(depthLoop(), 100);
     return interval;
+}
+function depthLoop() {
+    //do depth lock
+    appendZ(getDepth());
+
+    let zp = z_last_raw; // We don't want a specific depth, we want depth to be constant. So- P is change between now and last.
+    let zi = getDepthIntegral();
+    let zd = getDepthDerivative();
+    let zout = doDepthPID(zp, zi, zd);
+
+    pca.setPulseLength(1, zout+1550);
+    pca.setPulseLength(11, zout+1550);
 }
 
 function doDepthPID(zp, zi, zd) {
@@ -392,14 +393,14 @@ function doDepthPID(zp, zi, zd) {
 function appendZ(depth) {
     // Shift everything in the array one to the left, discarding [0] and making the last index redundant
     let z_last_0 = z_last[0]; // We're about to get rid of this, but we need it for math later.
-    for(let i = 0, i < loop_history-1, i++) {  // Getting raw values to play with
+    for(let i = 0; i < loop_history-1; i++) {  // Getting raw values to play with
         z_last[i] = z_last[i+1]
     }
     z_last[loop_history] = depth;
 
     // We don't actually care about the actual depth, we care that we aren't moving. So, a new array comprised of
     // the difference between each measurement is what we need.
-    for(let i = 1, i < loop_history, i++) {
+    for(let i = 1; i < loop_history; i++) {
         z_last_diff[i] = z_last_raw[i] - z_last_raw[i-1];
     }
     z_last_diff[0] = z_last_diff[0] - z_last_0;
@@ -412,7 +413,7 @@ function getDepth() {
 function getDepthIntegral() {
     // This isn't an integral of the entire usage since that's not useful- it's just loop_history*interval length ms.
     let returnval;
-    for(let i = 0; i < loop_history, i++) {
+    for(let i = 0; i < loop_history; i++) {
         returnval += z_last[loop_history]*100;
     }
     return returnval;
