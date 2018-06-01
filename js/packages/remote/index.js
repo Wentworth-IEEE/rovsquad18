@@ -241,6 +241,7 @@ function stopMagStream(data) {
     sendToken(new responseToken({}, data.headers.transactionID));
 }
 
+let depth_interval
 /**
  * Maps degrees of freedom to motor values and sends the motor values in the body of a response token.
  * @param data - token recieved from the surface
@@ -262,6 +263,10 @@ function setMotors(data) {
             console.error(error);
         }
     });
+    
+    if(inDepthDeadzone(data.body.slice(3, 5))) {
+        depth_interval = depthLock(depth_interval);
+    }
 
     if (!args.debug)
         pca.setDutyCycle(7, data.body[6]);
@@ -361,29 +366,23 @@ let z_last_diff; // Also to be used as an array
 let zKp = 1;
 let zKi = 1;
 let zKd = 0;
-let LOCK_DEPTH = true; // As above- to be set by user later.
-function depthLock(data) {
-    if(args.debug)
-        return;
+function depthLock(interval) { 
+    if(interval != null)
+        clearInterval(interval);
+    
+    interval = setInterval( () =>
+        //do depth lock
+        appendZ(getDepth());
 
-    if(LOCK_DEPTH) {
-       let interval = setInterval( () =>
-            //do depth lock
-            appendZ(getDepth());
+        let zp = z_last_raw; // We don't want a specific depth, we want depth to be constant. So- P is change between now and last.
+        let zi = getDepthIntegral();
+        let zd = getDepthDerivative();
+        let zout = doDepthPID(zp, zi, zd);
 
-            let zp = z_last[4]-z_last[3]; // We don't want a specific depth, we want depth to be constant. So- P is change between now and last.
-            let zi = getDepthIntegral();
-            let zd = getDepthDerivative();
-            let zout = doDepthPID(zp, zi, zd);
-
-            pca.setPulseLength(1, zout+1550);
-            pca.setPulseLength(11, zout+1550);
-
-            if(!LOCK_DEPTH) {
-                clearInterval(interval);
-            }
-        ), 100);
-    }
+        pca.setPulseLength(1, zout+1550);
+        pca.setPulseLength(11, zout+1550);
+    ), 100);
+    return interval;
 }
 
 function doDepthPID(zp, zi, zd) {
