@@ -359,20 +359,32 @@ function stopPiTempStream(data) {
     sendToken(new responseToken({}, data.headers.transactionID));
 }
 
+function inDepthDeadzone(args) {
+    // Checking if the values are within the deadzone.
+    // Done seperately just in case they aren't the same value.
+    if( !(args[0] < .15 && args[0] > -.15) )
+        return false;
+    if( !(args[1] < .15 && args[1] > -.15) )
+        return false;
+    return true;
+}
+
 let loop_history = 10; // Being a variable lets us change this later, if that's useful.
-let z_last_raw; //  To be used as an array
-let z_last_diff; // Also to be used as an array
+let z_last_raw=[-1]; //  To be used as an array
+let z_last_diff=[-1]; // Also to be used as an array
 // Constants are here for now, will be set by the user through the dashboard later.
 let zKp = 1;
 let zKi = 1;
 let zKd = 0;
+
 function depthLock(interval) { 
     if(interval != null)
         clearInterval(interval);
     
-    interval = setInterval(depthLoop(), 100);
+    interval = setInterval( () => depthLoop(), 100);
     return interval;
 }
+
 function depthLoop() {
     //do depth lock
     appendZ(getDepth());
@@ -390,13 +402,23 @@ function doDepthPID(zp, zi, zd) {
     return zKp*zp + zKi*zi + zKd*zd;
 }
 
-function appendZ(depth) {
-    // Shift everything in the array one to the left, discarding [0] and making the last index redundant
-    let z_last_0 = z_last[0]; // We're about to get rid of this, but we need it for math later.
-    for(let i = 0; i < loop_history-1; i++) {  // Getting raw values to play with
-        z_last[i] = z_last[i+1]
+function initLoopArray() {
+    if(z_last_raw[0] == -1) {
+        for(let i = 0; i < loop_history; i++) {
+            z_last_raw.push(0);
+        }
+        z_last_diff = z_last_raw;
     }
-    z_last[loop_history] = depth;
+}
+
+function appendZ(depth) {
+    initLoopArray();
+    // Shift everything in the array one to the left, discarding [0] and making the last index redundant
+    let z_last_0 = z_last_raw[0]; // We're about to get rid of this, but we need it for math later.
+    for(let i = 0; i < loop_history-1; i++) {  // Getting raw values to play with
+        z_last_raw[i] = z_last_raw[i+1]
+    }
+    z_last_raw[loop_history] = depth;
 
     // We don't actually care about the actual depth, we care that we aren't moving. So, a new array comprised of
     // the difference between each measurement is what we need.
@@ -414,7 +436,7 @@ function getDepthIntegral() {
     // This isn't an integral of the entire usage since that's not useful- it's just loop_history*interval length ms.
     let returnval;
     for(let i = 0; i < loop_history; i++) {
-        returnval += z_last[loop_history]*100;
+        returnval += z_last_diff[loop_history]*100;
     }
     return returnval;
 }
