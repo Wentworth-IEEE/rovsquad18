@@ -33,7 +33,7 @@ else {
     smolUpDownAxis = 5;
     throttleAxis = 3;
     setDepthButton = 5;
-    unsetDepthButton = 6;
+    unsetDepthButton = 4;
 }
 
 gamepad.init();
@@ -115,5 +115,5 @@ module.exports = class extends EventEmitter {
 
 if (require.main === module) {
     const mapper = new module.exports(17, 0.15);
-    mapper.on('rawData', console.log);
+    mapper.on('setDepthLock', console.log);
 }
