@@ -248,15 +248,15 @@ function stopMagStream(data) {
  */
 function setMotors(data) {
     const vectorMotorVals = setMotorValues(data.body.slice(0, 3), vectorMapMatrix);
-    const depthMotorVals = setMotorValues(data.body.slice(3, 5), depthMapMatrix);    const manipulatorVal = setMotorValue(data.body[5]);
+    const depthMotorVals = setMotorValues(data.body.slice(3, 5), depthMapMatrix);
+    const manipulatorVal = setMotorValue(data.body[5]);
     const picamServoVal = setMotorValue(data.body[7]);
     const motorValues = vectorMotorVals.concat(depthMotorVals.concat(manipulatorVal.concat(picamServoVal)));
     logger.d('motor values', JSON.stringify(motorValues));
     motorValues.map((motorVal, index) => {
-        if (args.debug) return;
+        if (args.debug || (depthLockToggle && (val === 4 || val === 5))) return;
         try {
-            if (!depthLockToggle && index !== 4)
-                pca.setPulseLength(motorChannels[index], motorVal);
+            pca.setPulseLength(motorChannels[index], motorVal);
         }
         catch (error) {
             console.error(`YOU GOT AN ERROR BITCH ${motorVal} INDEX ${index} DON'T FLY`);
