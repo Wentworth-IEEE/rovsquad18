@@ -33,6 +33,7 @@ else {
 
 gamepad.init();
 setInterval(gamepad.processEvents, 17);
+setInterval(gamepad.detectDevices, 500);
 
 module.exports = class extends EventEmitter {
 
@@ -40,7 +41,10 @@ module.exports = class extends EventEmitter {
         super();
         this.deadzone = deadzone;
 
-        this.axes = [0, 0, 0, 0, 0, 0];
+        this.axes = [
+            [0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0]
+        ];
         this.buttons = [false, false, false, false, false, false, false, false, false, false, false, false];
 
         this.directions = [
@@ -65,6 +69,7 @@ module.exports = class extends EventEmitter {
         this.emit('rawData', this.buttons);
     }
 
+
     buttonUp(id, num) {
         this.buttons[num] = false;
         this.emit('rawData', this.buttons);
@@ -72,24 +77,24 @@ module.exports = class extends EventEmitter {
 
     joystickMove(id, axis, val) {
         if (Math.abs(val) < this.deadzone) {
-            this.axes[axis] = 0;
+            this.axes[id][axis] = 0;
             return;
         }
 
-        this.axes[axis] = val;
+        this.axes[id][axis] = val;
         this.emit('rawData', this.axes);
     }
 
     checkValues() {
         const newVals = [
-            !this.buttons[6] && !this.buttons[0] * -this.axes[FBAxis], // FB
-            !this.buttons[6] &&  this.axes[dickspinAxis], // turn
-            !this.buttons[6] &&  this.axes[LRAxis], // strafe
-            !this.buttons[6] &&  this.buttons[0] * -this.axes[FBAxis], // pitch
-            !this.buttons[6] && (this.buttons[3] ? -this.axes[throttleAxis] * !this.buttons[1] : this.directions[4]), // depth
-            !this.buttons[6] && (this.buttons[1] * -this.axes[throttleAxis] * !this.buttons[3]), // manipulator
+            !this.buttons[6] && !this.buttons[0] * -this.axes[0][FBAxis], // FB
+            !this.buttons[6] &&  this.axes[0][dickspinAxis], // turn
+            !this.buttons[6] &&  this.axes[0][LRAxis], // strafe
+            !this.buttons[6] &&  this.axes[1][3], // pitch
+            !this.buttons[6] && (this.axes[1][5] - this.axes[1][4]) / 2, // depth
+            !this.buttons[6] && (this.buttons[1] * -this.axes[0][throttleAxis] * !this.buttons[3]), // manipulator
             !this.buttons[6] &&  this.buttons[10] * 1,
-             this.buttons[2] ?  -this.axes[throttleAxis] : this.directions[7]
+             this.buttons[2] ?  -this.axes[0][throttleAxis] : this.directions[7]
         ];
         if (arrEquals(newVals, this.directions))
             return;

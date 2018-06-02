@@ -247,8 +247,7 @@ function stopMagStream(data) {
  */
 function setMotors(data) {
     const vectorMotorVals = setMotorValues(data.body.slice(0, 3), vectorMapMatrix);
-    const depthMotorVals = setMotorValues(data.body.slice(3, 5), depthMapMatrix);
-    const manipulatorVal = setMotorValue(data.body[5]);
+    const depthMotorVals = setMotorValues(data.body.slice(3, 5), depthMapMatrix);    const manipulatorVal = setMotorValue(data.body[5]);
     const picamServoVal = setMotorValue(data.body[7]);
     const motorValues = vectorMotorVals.concat(depthMotorVals.concat(manipulatorVal.concat(picamServoVal)));
     logger.d('motor values', JSON.stringify(motorValues));
@@ -264,7 +263,7 @@ function setMotors(data) {
     });
 
     if (!args.debug)
-        pca.setDutyCycle(7, data.body[6]);
+        pca.setDutyCycle(6, data.body[6]);
     logger.d('leveler', `Setting leveler channel to ${data.body[6]}`);
 
     const response = new responseToken(motorValues, data.headers.transactionID);
