@@ -181,6 +181,15 @@ module.exports = class extends EventEmitter {
     }
 
     /**
+     * Tells the ROV to start or stop maintaining its current depth
+     * @param value - true or false
+     * @returns {Promise<*>}
+     */
+    setDepthLock(value) {
+        return this.sendToken(new botProtocol.setDepthLockToken(value));
+    }
+
+    /**
      * FUNK OUTTA HERE
      * @param brightness
      * @returns {Promise<*>}

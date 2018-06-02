@@ -45,7 +45,6 @@ const args = yargs
     .argv;
 if (args.local) args.debug = true;
 const i2cbus = args.debug ? { openSync: () => 69 } : require('i2c-bus');
-const { liftBag } = args.debug ? {} : require('bag-control');
 // global constants
 const hostAddress = '0.0.0.0';
 const hostPort = 8080;
@@ -100,7 +99,7 @@ const pca = args.debug ? undefined : new Pca9685Driver({
 });
 
 // global not-constants
-let _client;
+let _client, depthLockToggle, targetDepth;
 
 // exit on any message from parent process (if it exists)
 process.on('message', process.exit);
@@ -196,6 +195,7 @@ tokenTypeEmitter.on(tokenTypes.CONTROLLERDATA, setMotors);
 tokenTypeEmitter.on(tokenTypes.READPITEMP, readPiTemp);
 tokenTypeEmitter.on(tokenTypes.STARTPITEMPSTREAM, startPiTempStream);
 tokenTypeEmitter.on(tokenTypes.STOPPITEMPSTREAM, stopPiTempStream);
+tokenTypeEmitter.on(tokenTypes.SETDEPTHLOCKTOKEN, setDepthLock);
 tokenTypeEmitter.on(tokenTypes.LEDTEST, setLEDBrightness);
 
 // respond with the same body as the request
@@ -327,7 +327,6 @@ function setMotorValues(data, matrix) {
  * @param data
  */
 async function readPiTemp(data) {
-    // TODO SEND TEMP HERE
     if (args.debug)
         return sendToken(new responseToken('6 bajillion degrees', data.headers.transactionID));
 
@@ -357,6 +356,18 @@ function startPiTempStream(data) {
 function stopPiTempStream(data) {
     clearInterval(intervals['piTemp']);
     sendToken(new responseToken({}, data.headers.transactionID));
+}
+
+function setDepthLock(data) {
+    // clear interval first
+    depthLockToggle = false;
+    clearInterval(intervals['depthLock']);
+    if (!data.body)
+        return;
+
+    depthLockToggle = true;
+    targetDepth =
+    intervals['depthLock'] = setInterval(depthLoop, 100);
 }
 
 function inDepthDeadzone(args) {
