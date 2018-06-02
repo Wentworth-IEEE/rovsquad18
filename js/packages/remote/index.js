@@ -372,7 +372,7 @@ async function setDepthLock(data) {
     depthLockToggle = true;
     targetDepth = await depthSlave.getDepth();
     logger.i('depth lock', `depth lock enabled, setting to ${targetDepth}`);
-    intervals['depthLock'] = setInterval(depthLoop, 100);
+    intervals['depthLock'] = setInterval(depthLoop, 10);
 
     // respond like a good boy
     sendToken(new responseToken({}, data.headers.transactionID));
@@ -457,8 +457,10 @@ async function depthLoop() {
 
     doZLog(zp, zi, zd, zout, depth, z_last_raw, z_last_diff);
 
-    pca.setPulseLength(1, zout+1550);
-    pca.setPulseLength(11, zout+1550);
+    if(z_last_raw[0] != 0) { // Don't set it if we don't have a full array of data yet
+        pca.setPulseLength(1, zout+1550);
+        pca.setPulseLength(11, zout+1550);
+    }
 }
 
 function doDepthPID(zp, zi, zd) {
@@ -497,7 +499,7 @@ function getDepthIntegral() {
     // This isn't an integral of the entire usage since that's not useful- it's just loop_history*interval length ms.
     let returnval=0;
     for(let i = 0; i < 10; i++) {
-        returnval += z_last_diff[i]*100;
+        returnval += z_last_diff[i]*10;
     }
     return returnval;
 }
