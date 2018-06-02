@@ -5,6 +5,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Ignore all the random zlogging stuff
+tools/oldlogs/*.csv
+tools/oldlogs/*.png
+tools/zlog.csv
+tools/zout.png
+
 # Runtime data
 pids
 *.pid
