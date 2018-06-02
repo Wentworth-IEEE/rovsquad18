@@ -361,14 +361,17 @@ function stopPiTempStream(data) {
 
 let startZLog=false;
 var zlogfile = require('fs');
-var filepath = ""+makeZLogName();
+var filepath = '/opt/zlog/zlog.csv'; /*""+makeZLogName();*/ // there was a fancy naming thing but it kept not working so it can fuck right off
 
 function doZLog(zp, zi, zd, zout, depth) {
     if(!startZLog) {
         console.log("Started logging at"+makeZLogName());
-        fs.closeSync(fs.openSync(filepath, generateHeaderString(), function(err) {
+        zlogfile.open(filepath, 'w', function(err, fd) { 
             if(err) throw err;
-        })); //TODO- return here
+        });
+        zlogfile.appendFile(filepath, generateHeaderString(), function(err) {
+            if(err) throw err;
+        });
         startZLog = true;
     }
 
@@ -395,7 +398,7 @@ function generateDataString(zp, zi, zout, depth) {
     for(let i = 0; i < z_last_diff.length; i++)
         dstring += ", "+z_last_raw[i];
 
-    return dstring;
+    return dstring+'\n';
 }
 
 function makeZLogName() {
@@ -432,7 +435,7 @@ function depthLock(interval) {
 
 function depthLoop() {
     //do depth lock
-    let depth = getDepth();
+    let depth = ;
     appendZ(depth);
 
     let zp = z_last_raw[loop_history]; // We don't want a specific depth, we want depth to be constant. So- P is change between now and last.
