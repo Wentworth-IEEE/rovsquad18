@@ -18,7 +18,7 @@ const EventEmitter = require('events');
 const yargs = require('yargs');
 const { nugLog, levels } = require('nugget-logger');
 const { tokenTypes, responseTypes, responseToken } = require('bot-protocol');
-const depthSlave = new require('nugget-depth')();
+const depthSlave = new (require('nugget-depth'))();
 const { Pca9685Driver } = require("pca9685");
 const util = require('util');
 const fs = require('fs');
@@ -359,7 +359,7 @@ function stopPiTempStream(data) {
  * Toggles depth lock to be enabled or disabled
  * @param data - token sent from robot, body has boolean to lock depth or not
  */
-function setDepthLock(data) {
+async function setDepthLock(data) {
     // clear interval first
     clearInterval(intervals['depthLock']);
     if (!data.body) {
@@ -371,7 +371,7 @@ function setDepthLock(data) {
 
     // depth lock on!!
     depthLockToggle = true;
-    targetDepth = depthSlave.getDepth();
+    targetDepth = await depthSlave.getDepth();
     logger.i('depth lock', `depth lock enabled, setting to ${targetDepth}`);
     intervals['depthLock'] = setInterval(depthLoop, 100);
 
