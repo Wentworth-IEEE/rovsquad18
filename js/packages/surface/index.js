@@ -72,6 +72,7 @@ const server = http.Server(app);
 const dashboard = io(server);
 
 let _dashSocket = dummySocket;
+let toggleDepthLock = false;
 
 // express/webserver stuff
 app.use('/static', express.static(__dirname + '/dashboard/static'));
@@ -111,6 +112,10 @@ async function main() {
             mapper.on('data', async data => {
                 _dashSocket.emit('motorData', (await botSocket.sendControllerData(data)).body);
             });
+            mapper.on('setDepthLock', async value => {
+                toggleDepthLock = value;
+                botSocket.setDepthLock(toggleDepthLock);
+            })
         });
 
         socket.on('disconnectFromBot', async () => {

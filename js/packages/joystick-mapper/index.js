@@ -12,6 +12,8 @@ let dickspinAxis;
 let smolLeftRightAxis;
 let smolUpDownAxis;
 let throttleAxis;
+let setDepthButton;
+let unsetDepthButton;
 
 if (win) {
     FBAxis = 0;
@@ -20,6 +22,8 @@ if (win) {
     smolLeftRightAxis = 2;
     smolUpDownAxis = 3;
     throttleAxis = 5;
+    setDepthButton = 9;
+    unsetDepthButton = 8;
 }
 else {
     FBAxis = 1;
@@ -29,7 +33,6 @@ else {
     smolUpDownAxis = 5;
     throttleAxis = 3;
 }
-
 
 gamepad.init();
 setInterval(gamepad.processEvents, 17);
@@ -63,6 +66,10 @@ module.exports = class extends EventEmitter {
     buttonDown(id, num) {
         this.buttons[num] = true;
         this.emit('rawData', this.buttons);
+        if (id === 1 && num === setDepthButton)
+            this.emit('setDepthLock', true);
+        if (id === 1 && num === unsetDepthButton)
+            this.emit('setDepthLock', false);
     }
 
     buttonUp(id, num) {
@@ -88,8 +95,8 @@ module.exports = class extends EventEmitter {
             !this.buttons[6] &&  this.buttons[0] * -this.axes[FBAxis], // pitch
             !this.buttons[6] && (this.buttons[3] ? -this.axes[throttleAxis] * !this.buttons[1] : this.directions[4]), // depth
             !this.buttons[6] && (this.buttons[1] * -this.axes[throttleAxis] * !this.buttons[3]), // manipulator
-            !this.buttons[6] &&  this.buttons[10] * 1,
-             this.buttons[2] ?  -this.axes[throttleAxis] : this.directions[7]
+            !this.buttons[6] &&  this.buttons[10] * 1, // leveler
+             this.buttons[2] ?  -this.axes[throttleAxis] : this.directions[7] // HEY. WATCHUDOIN OVER DERE.
         ];
         if (arrEquals(newVals, this.directions))
             return;
@@ -102,5 +109,5 @@ module.exports = class extends EventEmitter {
 
 if (require.main === module) {
     const mapper = new module.exports(17, 0.15);
-    mapper.on('data', console.log);
+    mapper.on('setDepthLock', console.log);
 }

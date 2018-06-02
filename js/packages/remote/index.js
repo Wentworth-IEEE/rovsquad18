@@ -18,9 +18,8 @@ const EventEmitter = require('events');
 const yargs = require('yargs');
 const { nugLog, levels } = require('nugget-logger');
 const { tokenTypes, responseTypes, responseToken } = require('bot-protocol');
+const depthSlave = new require('nugget-depth')();
 const { Pca9685Driver } = require("pca9685");
-const DepthSlave = require('nugget-depth');
-const depthSlave = new DepthSlave();
 const util = require('util');
 const fs = require('fs');
 const args = yargs
@@ -243,7 +242,6 @@ function stopMagStream(data) {
     sendToken(new responseToken({}, data.headers.transactionID));
 }
 
-let depth_interval
 /**
  * Maps degrees of freedom to motor values and sends the motor values in the body of a response token.
  * @param data - token recieved from the surface
@@ -257,18 +255,15 @@ function setMotors(data) {
     logger.d('motor values', JSON.stringify(motorValues));
     motorValues.map((motorVal, index) => {
         if (args.debug) return;
-        try{
-            pca.setPulseLength(motorChannels[index], motorVal);
+        try {
+            if (!depthLockToggle && index !== 4)
+                pca.setPulseLength(motorChannels[index], motorVal);
         }
         catch (error) {
             console.error(`YOU GOT AN ERROR BITCH ${motorVal} INDEX ${index} DON'T FLY`);
             console.error(error);
         }
     });
-    
-    if(inDepthDeadzone(data.body.slice(3, 5))) {
-        depth_interval = depthLock(depth_interval);
-    }
 
     if (!args.debug)
         pca.setDutyCycle(7, data.body[6]);
@@ -360,6 +355,30 @@ function stopPiTempStream(data) {
     sendToken(new responseToken({}, data.headers.transactionID));
 }
 
+/**
+ * Toggles depth lock to be enabled or disabled
+ * @param data - token sent from robot, body has boolean to lock depth or not
+ */
+function setDepthLock(data) {
+    // clear interval first
+    clearInterval(intervals['depthLock']);
+    if (!data.body) {
+        // depth lock off
+        logger.i('depth lock', 'depth lock disabled');
+        depthLockToggle = false;
+        return;
+    }
+
+    // depth lock on!!
+    depthLockToggle = true;
+    targetDepth = depthSlave.getDepth();
+    logger.i('depth lock', `depth lock enabled, setting to ${targetDepth}`);
+    intervals['depthLock'] = setInterval(depthLoop, 100);
+
+    // respond like a good boy
+    sendToken(new responseToken({}, data.headers.transactionID));
+}
+
 let startZLog=false;
 var zlogfile = require('fs');
 var filepath = '/opt/zlog/zlog.csv'; /*""+makeZLogName();*/ // there was a fancy naming thing but it kept not working so it can fuck right off
@@ -408,18 +427,6 @@ function makeZLogName() {
     return logname;
 }
 
-function setDepthLock(data) {
-    // clear interval first
-    depthLockToggle = false;
-    clearInterval(intervals['depthLock']);
-    if (!data.body)
-        return;
-
-    depthLockToggle = true;
-    targetDepth =
-    intervals['depthLock'] = setInterval(depthLoop, 100);
-}
-
 function inDepthDeadzone(args) {
     // Checking if the values are within the deadzone.
     // Done seperately just in case they aren't the same value.
@@ -438,14 +445,6 @@ let z_last_diff=[0,0,0,0,0,0,0,0,0,0]; // Also to be used as an array
 let zKp = 1;
 let zKi = 1;
 let zKd = 0;
-
-function depthLock(interval) { 
-    if(interval != null)
-        clearInterval(interval);
-    
-    interval = setInterval( () => depthLoop(), 100);
-    return interval;
-}
 
 function depthLoop() {
     //do depth lock
