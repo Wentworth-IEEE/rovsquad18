@@ -389,7 +389,7 @@ function generateHeaderString() {
         headerstring += ", z_last_raw"+i;
     for(let i = 0; i < z_last_diff.length; i++)
         headerstring += ", z_last_diff"+i;
-    return headerstring;
+    return headerstring+'\n';
 }
 
 function generateDataString(zp, zi, zout, depth) {
@@ -436,12 +436,14 @@ function depthLock(interval) {
     return interval;
 }
 
-function depthLoop() {
+async function depthLoop() {
     //do depth lock
-    let depth = depthSlave.getDepth();
+    let depth = await depthSlave.getDepth();
+
+
     appendZ(depth);
 
-    let zp = z_last_raw[10]; // We don't want a specific depth, we want depth to be constant. So- P is change between now and last.
+    let zp = z_last_raw[9]; // We don't want a specific depth, we want depth to be constant. So- P is change between now and last.
     let zi = getDepthIntegral();
     let zd = getDepthDerivative();
     let zout = doDepthPID(zp, zi, zd);
@@ -474,7 +476,7 @@ function appendZ(depth) {
     for(let i = 0; i < 9; i++) {  // Getting raw values to play with
         z_last_raw[i] = z_last_raw[i+1]
     }
-    z_last_raw[10] = depth;
+    z_last_raw[9] = depth;
 
     // We don't actually care about the actual depth, we care that we aren't moving. So, a new array comprised of
     // the difference between each measurement is what we need.
@@ -484,21 +486,17 @@ function appendZ(depth) {
     z_last_diff[0] = z_last_diff[0] - z_last_0;
 }
 
-function getDepth() {
-    return Math.random()*100; // Replace with Bobby's sensor stuff
-}
-
 function getDepthIntegral() {
     // This isn't an integral of the entire usage since that's not useful- it's just loop_history*interval length ms.
-    let returnval;
+    let returnval=0;
     for(let i = 0; i < 10; i++) {
-        returnval += z_last_diff[10]*100;
+        returnval += z_last_diff[i]*100;
     }
     return returnval;
 }
 
 function getDepthDerivative() {
-    return (z_last_diff[10] - z_last_diff[0] ) / 2;
+    return (z_last_diff[9] - z_last_diff[0] ) / 2;
 }
 
 function setLEDBrightness(data) {
