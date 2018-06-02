@@ -20,7 +20,7 @@ const tokenTypes = {
     READPITEMP: 'readPiTemp',
     STARTPITEMPSTREAM: 'startPiTempStream',
     STOPPITEMPSTREAM: 'stopPiTempStream',
-    SETDEPTHLOCKTOKEN: 'setDepthLockToken',
+    SETDEPTHLOCK: 'setDepthLock',
     LEDTEST: 'LEDTest'
 };
 exports.tokenTypes = tokenTypes;
@@ -108,7 +108,7 @@ exports.stopPiTempStreamToken = class extends token {
 
 exports.setDepthLockToken = class extends token {
     constructor(value) {
-        super(tokenTypes.SETDEPTHLOCKTOKEN, value);
+        super(tokenTypes.SETDEPTHLOCK, value);
     }
 };
 
