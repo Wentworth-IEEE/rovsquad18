@@ -19,6 +19,8 @@ const yargs = require('yargs');
 const { nugLog, levels } = require('nugget-logger');
 const { tokenTypes, responseTypes, responseToken } = require('bot-protocol');
 const { Pca9685Driver } = require("pca9685");
+const DepthSlave = require('nugget-depth');
+const depthSlave = new DepthSlave();
 const util = require('util');
 const fs = require('fs');
 const args = yargs
@@ -417,9 +419,10 @@ function inDepthDeadzone(args) {
     return true;
 }
 
-let loop_history = 10; // Being a variable lets us change this later, if that's useful.
-let z_last_raw=[-1]; //  To be used as an array
-let z_last_diff=[-1]; // Also to be used as an array
+// This \/ was contributing to stupid, so bye for now
+// let loop_history = 10; // Being a variable lets us change this later, if that's useful.
+let z_last_raw=[0,0,0,0,0,0,0,0,0,0]; //  To be used as an array- ideally these wouldn't be set like this but attempting to prevent stupid over here
+let z_last_diff=[0,0,0,0,0,0,0,0,0,0]; // Also to be used as an array
 // Constants are here for now, will be set by the user through the dashboard later.
 let zKp = 1;
 let zKi = 1;
@@ -435,10 +438,10 @@ function depthLock(interval) {
 
 function depthLoop() {
     //do depth lock
-    let depth = ;
+    let depth = depthSlave.getDepth();
     appendZ(depth);
 
-    let zp = z_last_raw[loop_history]; // We don't want a specific depth, we want depth to be constant. So- P is change between now and last.
+    let zp = z_last_raw[10]; // We don't want a specific depth, we want depth to be constant. So- P is change between now and last.
     let zi = getDepthIntegral();
     let zd = getDepthDerivative();
     let zout = doDepthPID(zp, zi, zd);
@@ -454,8 +457,10 @@ function doDepthPID(zp, zi, zd) {
 }
 
 function initLoopArray() {
+    return;
+    // cutting things up to fix stupid again, they're all set to a length of 10 @ 0 anyway
     if(z_last_raw[0] == -1) {
-        for(let i = 0; i < loop_history; i++) {
+        for(let i = 0; i < 10; i++) {
             z_last_raw.push(0);
         }
         z_last_diff = z_last_raw;
@@ -466,14 +471,14 @@ function appendZ(depth) {
     initLoopArray();
     // Shift everything in the array one to the left, discarding [0] and making the last index redundant
     let z_last_0 = z_last_raw[0]; // We're about to get rid of this, but we need it for math later.
-    for(let i = 0; i < loop_history-1; i++) {  // Getting raw values to play with
+    for(let i = 0; i < 9; i++) {  // Getting raw values to play with
         z_last_raw[i] = z_last_raw[i+1]
     }
-    z_last_raw[loop_history] = depth;
+    z_last_raw[10] = depth;
 
     // We don't actually care about the actual depth, we care that we aren't moving. So, a new array comprised of
     // the difference between each measurement is what we need.
-    for(let i = 1; i < loop_history; i++) {
+    for(let i = 1; i < 10; i++) {
         z_last_diff[i] = -(z_last_raw[i] - z_last_raw[i-1]); // make negative because pressure decreases as ROV goes up
     }
     z_last_diff[0] = z_last_diff[0] - z_last_0;
@@ -486,14 +491,14 @@ function getDepth() {
 function getDepthIntegral() {
     // This isn't an integral of the entire usage since that's not useful- it's just loop_history*interval length ms.
     let returnval;
-    for(let i = 0; i < loop_history; i++) {
-        returnval += z_last_diff[loop_history]*100;
+    for(let i = 0; i < 10; i++) {
+        returnval += z_last_diff[10]*100;
     }
     return returnval;
 }
 
 function getDepthDerivative() {
-    return (z_last_diff[loop_history] - z_last_diff[0] ) / 2;
+    return (z_last_diff[10] - z_last_diff[0] ) / 2;
 }
 
 function setLEDBrightness(data) {

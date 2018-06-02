@@ -2,6 +2,7 @@
 	"dependencies": {
 		"bag-control": "file:../bag-control",
 		"bot-protocol": "file:../bot-protocol",
+		"nugget-depth": "file:../nugget-depth",
 		"nugget-logger": "file:../nugget-logger",
 		"pca9685": "^4.0.3",
 		"yargs": "^11.0.0"
