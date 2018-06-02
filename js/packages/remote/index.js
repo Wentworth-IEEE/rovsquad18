@@ -359,6 +359,51 @@ function stopPiTempStream(data) {
     sendToken(new responseToken({}, data.headers.transactionID));
 }
 
+let startZLog=false;
+var zlogfile = require('fs');
+var filepath = ""+makeZLogName();
+
+function doZLog(zp, zi, zd, zout, depth) {
+    if(!startZLog) {
+        console.log("Started logging at"+makeZLogName());
+        fs.closeSync(fs.openSync(filepath, generateHeaderString(), function(err) {
+            if(err) throw err;
+        })); //TODO- return here
+        startZLog = true;
+    }
+
+    zlogfile.appendFile(filepath, generateDataString(zp, zi, zd, zout, depth, z_last_raw, z_last_diff), function(err) {
+        console.log("Logged");
+        if(err) throw err;
+    });
+}
+
+function generateHeaderString() {
+    let headerstring = 'zp, zi, zout, depth'
+    for(let i = 0; i < z_last_raw.length; i++)
+        headerstring += ", z_last_raw"+i;
+    for(let i = 0; i < z_last_diff.length; i++)
+        headerstring += ", z_last_diff"+i;
+    return headerstring;
+}
+
+function generateDataString(zp, zi, zout, depth) {
+    let dstring = "";
+    dstring += zp+", "+zi+", "+zout+", "+depth
+    for(let i = 0; i < z_last_raw.length; i++)
+        dstring += ", "+z_last_raw[i];
+    for(let i = 0; i < z_last_diff.length; i++)
+        dstring += ", "+z_last_raw[i];
+
+    return dstring;
+}
+
+function makeZLogName() {
+    let d = new Date();
+    let logname = "/opt/zlogs/"+d+".csv";
+    return logname;
+}
+
 function inDepthDeadzone(args) {
     // Checking if the values are within the deadzone.
     // Done seperately just in case they aren't the same value.
@@ -387,12 +432,15 @@ function depthLock(interval) {
 
 function depthLoop() {
     //do depth lock
-    appendZ(getDepth());
+    let depth = getDepth();
+    appendZ(depth);
 
-    let zp = z_last_raw; // We don't want a specific depth, we want depth to be constant. So- P is change between now and last.
+    let zp = z_last_raw[loop_history]; // We don't want a specific depth, we want depth to be constant. So- P is change between now and last.
     let zi = getDepthIntegral();
     let zd = getDepthDerivative();
     let zout = doDepthPID(zp, zi, zd);
+
+    doZLog(zp, zi, zd, zout, depth, z_last_raw, z_last_diff);
 
     pca.setPulseLength(1, zout+1550);
     pca.setPulseLength(11, zout+1550);
@@ -423,13 +471,13 @@ function appendZ(depth) {
     // We don't actually care about the actual depth, we care that we aren't moving. So, a new array comprised of
     // the difference between each measurement is what we need.
     for(let i = 1; i < loop_history; i++) {
-        z_last_diff[i] = z_last_raw[i] - z_last_raw[i-1];
+        z_last_diff[i] = -(z_last_raw[i] - z_last_raw[i-1]); // make negative because pressure decreases as ROV goes up
     }
     z_last_diff[0] = z_last_diff[0] - z_last_0;
 }
 
 function getDepth() {
-    return 0; // Replace with Bobby's sensor stuff
+    return Math.random()*100; // Replace with Bobby's sensor stuff
 }
 
 function getDepthIntegral() {
