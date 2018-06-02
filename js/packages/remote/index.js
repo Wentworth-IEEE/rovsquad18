@@ -196,7 +196,7 @@ tokenTypeEmitter.on(tokenTypes.CONTROLLERDATA, setMotors);
 tokenTypeEmitter.on(tokenTypes.READPITEMP, readPiTemp);
 tokenTypeEmitter.on(tokenTypes.STARTPITEMPSTREAM, startPiTempStream);
 tokenTypeEmitter.on(tokenTypes.STOPPITEMPSTREAM, stopPiTempStream);
-tokenTypeEmitter.on(tokenTypes.SETDEPTHLOCKTOKEN, setDepthLock);
+tokenTypeEmitter.on(tokenTypes.SETDEPTHLOCK, setDepthLock);
 tokenTypeEmitter.on(tokenTypes.LEDTEST, setLEDBrightness);
 
 // respond with the same body as the request
