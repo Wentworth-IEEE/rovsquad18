@@ -14,6 +14,9 @@ let smolUpDownAxis;
 let throttleAxis;
 let setDepthButton;
 let unsetDepthButton;
+let controller2RightTrigger;
+let controller2LeftTrigger;
+let rightThumbUD;
 
 if (win) {
     FBAxis = 0;
@@ -34,6 +37,9 @@ else {
     throttleAxis = 3;
     setDepthButton = 5;
     unsetDepthButton = 4;
+    controller2RightTrigger = 5;
+    controller2LeftTrigger = 2;
+    rightThumbUD = 4;
 }
 
 gamepad.init();
@@ -50,6 +56,8 @@ module.exports = class extends EventEmitter {
             [0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0]
         ];
+        this.axes[1][controller2RightTrigger] = -1;
+        this.axes[1][controller2LeftTrigger] = -1
         this.buttons = [false, false, false, false, false, false, false, false, false, false, false, false];
 
         this.directions = [
@@ -98,11 +106,11 @@ module.exports = class extends EventEmitter {
             !this.buttons[6] && !this.buttons[0] * -this.axes[0][FBAxis], // FB
             !this.buttons[6] &&  this.axes[0][dickspinAxis], // turn
             !this.buttons[6] &&  this.axes[0][LRAxis], // strafe
-            !this.buttons[6] &&  this.axes[1][3], // pitch
-            !this.buttons[6] && (this.axes[1][5] - this.axes[1][4]) / 2, // depth
+            !this.buttons[6] &&  this.axes[1][rightThumbUD], // pitch
+            !this.buttons[6] && (this.axes[1][controller2LeftTrigger] - this.axes[1][controller2RightTrigger]) / 2, // depth
             !this.buttons[6] && (this.buttons[1] * -this.axes[0][throttleAxis] * !this.buttons[3]), // manipulator
-            !this.buttons[6] &&  this.buttons[10] * 1,
-             this.buttons[2] ?  -this.axes[0][throttleAxis] : this.directions[7]
+            !this.buttons[6] &&  this.buttons[10] * 1, // leveler
+             this.buttons[2] ?  -this.axes[0][throttleAxis] : this.directions[7] // picam
         ];
         if (arrEquals(newVals, this.directions))
             return;
@@ -115,5 +123,5 @@ module.exports = class extends EventEmitter {
 
 if (require.main === module) {
     const mapper = new module.exports(17, 0.15);
-    mapper.on('setDepthLock', console.log);
+    mapper.on('data', console.log);
 }

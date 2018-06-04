@@ -372,7 +372,7 @@ async function setDepthLock(data) {
     depthLockToggle = true;
     targetDepth = await depthSlave.getDepth();
     logger.i('depth lock', `depth lock enabled, setting to ${targetDepth}`);
-    intervals['depthLock'] = setInterval(depthLoop, 100);
+    intervals['depthLock'] = setInterval(depthLoop, 10);
 
     // respond like a good boy
     sendToken(new responseToken({}, data.headers.transactionID));
@@ -457,9 +457,9 @@ async function depthLoop() {
 
     doZLog(zp, zi, zd, zout, depth, z_last_raw, z_last_diff);
 
-    if(z_last_raw[0] != 0) {
-        pca.setPulseLength(1, 1550-zout);
-        pca.setPulseLength(11, 1550-zout);
+    if(z_last_raw[0] != 0) { // Don't set it if we don't have a full array of data yet
+        pca.setPulseLength(1, zout+1550);
+        pca.setPulseLength(11, zout+1550);
     }
 }
 
