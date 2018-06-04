@@ -254,7 +254,7 @@ function setMotors(data) {
     const motorValues = vectorMotorVals.concat(depthMotorVals.concat(manipulatorVal.concat(picamServoVal)));
     logger.d('motor values', JSON.stringify(motorValues));
     motorValues.map((motorVal, index) => {
-        if (args.debug || (depthLockToggle && (val === 4 || val === 5))) return;
+        if (args.debug || (depthLockToggle && (index === 4 || index === 5))) return;
         try {
             pca.setPulseLength(motorChannels[index], motorVal);
         }
@@ -457,8 +457,10 @@ async function depthLoop() {
 
     doZLog(zp, zi, zd, zout, depth, z_last_raw, z_last_diff);
 
-    pca.setPulseLength(1, zout+1550);
-    pca.setPulseLength(11, zout+1550);
+    if(z_last_raw[0] != 0) {
+        pca.setPulseLength(1, 1550-zout);
+        pca.setPulseLength(11, 1550-zout);
+    }
 }
 
 function doDepthPID(zp, zi, zd) {
@@ -468,7 +470,7 @@ function doDepthPID(zp, zi, zd) {
 function initLoopArray() {
     return;
     // cutting things up to fix stupid again, they're all set to a length of 10 @ 0 anyway
-    if(z_last_raw[0] == -1) {
+    if(z_last_raw[0] != 0) {
         for(let i = 0; i < 10; i++) {
             z_last_raw.push(0);
         }
@@ -497,7 +499,7 @@ function getDepthIntegral() {
     // This isn't an integral of the entire usage since that's not useful- it's just loop_history*interval length ms.
     let returnval=0;
     for(let i = 0; i < 10; i++) {
-        returnval += z_last_diff[i]*100;
+        returnval += z_last_diff[i]*10;
     }
     return returnval;
 }
